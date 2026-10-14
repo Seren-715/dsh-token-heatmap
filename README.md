@@ -18,6 +18,7 @@ All data comes from DSH's own local session logs — **no network requests, no s
 - Summary line: today / this week / all time
 - Refreshes every minute, and immediately when the window regains focus or visibility
 - Follows the host theme (light/dark); styling uses only `--dsw-alias-*` tokens
+- **Fully localized**: all visible text goes through the client locale service, so switching the UI language switches this section too (number units follow as well: 万/亿 vs K/M/B)
 
 ## Data source
 
@@ -93,6 +94,8 @@ node tools/test-weekly.mjs
 **Adaptive sizing.** A `ResizeObserver` measures the container and computes each cell's edge length into the CSS variable `--dth-cell`. One year of 53 columns yields 9–13px cells between 640px and 900px of available width, always fitting exactly.
 
 **Week alignment.** The range starts on the Sunday of the current week, so every column is a complete natural week, and cells after today stay empty. The month tick is placed on the column that contains the 1st of that month, so it always lines up with the grid.
+
+**Localization.** Visible text is never hardcoded. The plugin registers its own dictionary namespace with `ctx.locale.register(ns, { zh, en })` and reads it through the framework's injected `t` seat, so a language switch re-renders the section. Number units are localized too (`万/亿` in Chinese, `K/M/B` in English).
 
 ## License
 

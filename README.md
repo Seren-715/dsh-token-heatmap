@@ -1,84 +1,84 @@
 # dsh-token-heatmap
 
-在 DSH **设置**里增加一节「Token 用量」：近一年的每日 token 消耗热力图，一格一天，颜色越深那天用得越多。
+[中文](README.zh.md) | English
 
-数据全部来自本机 DSH 自己的会话日志，**不联网、不需要额外记账**。
+A **daily token-usage heatmap** that adds a "Token Usage" section to the DSH settings page. One cell per day, darker means more tokens consumed that day.
 
-> **隐私**：本插件不发起任何外部请求。会话日志只在本机读取，聚合结果只交给本机的 DSH 页面。
-> 仓库里没有任何个人数据或密钥。
+All data comes from DSH's own local session logs — **no network requests, no separate bookkeeping**.
 
-## 功能
+> **Privacy**: this plugin makes no outbound requests. Session logs are read on the local machine only, and the aggregated result is served to your local DSH page. The repository contains no personal data or credentials.
 
-- **每天 / 每周**两种口径切换：一格一天，或一格一周（整列同色）
-- **四种 token 口径**：总量 / 输入+输出 / 缓存读 / 输出
-- 近一年 **53 列 × 7 行**，起点按自然周对齐（周日→周六），今天之后的格子留空
-- 格子尺寸**按容器宽度自适应**（7–13px），永远铺满、不裁边、不出滚动条
-- 悬浮看单日/单周明细（总量、输入、输出、缓存读、调用次数）
-- 摘要行显示今日 / 本周 / 合计
-- 每分钟自动刷新；切回窗口或页面重新可见时立刻补拉
-- 深浅色跟随宿主主题；样式只用 `--dsw-alias-*` 变量
+## Features
 
-## 数据来源
+- **Daily / Weekly** toggle: one cell per day, or one cell per week (a whole column shares one colour)
+- **Four token metrics**: total / input+output / cache read / output
+- **One year, 53 columns × 7 rows**, aligned to natural weeks (Sunday→Saturday); cells after today stay empty
+- Cell size **adapts to the container width** (7–13px) so the chart always fits — no clipping, no scrollbar
+- Hover a cell for that day's or week's breakdown (total, input, output, cache read, call count)
+- Summary line: today / this week / all time
+- Refreshes every minute, and immediately when the window regains focus or visibility
+- Follows the host theme (light/dark); styling uses only `--dsw-alias-*` tokens
 
-`<DSH_HOME>/sessions/<项目>/<会话>/session.v*.jsonl.zstd`
+## Data source
 
-每条助手消息都带 `data.usage`：
+`<DSH_HOME>/sessions/<project>/<session>/session.v*.jsonl.zstd`
+
+Every assistant message carries `data.usage`:
 
 ```
 inputTokens / outputTokens / cacheReadTokens / cacheWriteTokens / totalTokens
 ```
 
-外加 `time`（epoch 毫秒）与 `data.message.source.model`，按本地日历日聚合即得每日用量。
+plus `time` (epoch milliseconds) and `data.message.source.model`. Bucketing those by local calendar day gives the daily totals.
 
-三个必须处理好的细节：
+Three details that must be handled correctly:
 
-1. **日志是多帧拼接的 zstd** —— 一次性解压只能拿到第一帧，必须按帧魔数逐帧解压。
-2. **同一 `seq` 可能重复出现**（回放）—— 按 seq 去重，否则某天的数字会被灌水。
-3. **会话写入中尾部可能出现截断帧** —— 只跳过那一帧，不要丢掉整个文件。
+1. **The log is a concatenation of zstd frames** — a one-shot decompress returns only the first frame, so it has to be split on the frame magic and decompressed frame by frame.
+2. **The same `seq` can appear more than once** (replay) — deduplicate by `seq`, otherwise a day gets inflated.
+3. **A truncated frame can appear at the tail** while a session is being written — skip that frame only, never drop the whole file.
 
-宿主侧按 `size + mtime` 做文件级缓存，命中约 4–5ms，只有新增或改动的日志会被重新解析。
+The host side caches per file keyed on `size + mtime`, so a warm pass takes about 4–5ms and only new or changed logs are re-parsed.
 
-### 关于口径
+### About the metrics
 
-DeepSeek 的 `totalTokens` 里**缓存读通常占 95% 以上**，所以"总量"这一档主要反映缓存命中量。
-想知道实际花了多少，选**「输入+输出」**。
+In DeepSeek's accounting, **cache reads are usually over 95% of `totalTokens`**, so the "total" metric mostly reflects cache hits. To see what you actually spent, pick **"input+output"**.
 
-颜色分级用**分位数**（你自己数据的 25/50/75/95 分位），不是绝对阈值，所以切换口径时量级差几十倍，热力图依然有可读的层次。
+Colour buckets use **quantiles** (the 25/50/75/95th percentile of your own data) rather than absolute thresholds, so the chart stays readable even though the four metrics differ by orders of magnitude.
 
-## 安装
+## Install
 
-桌面应用的 profile 由应用独占管理，`dsh plugin` 命令会拒绝改它，所以要在应用里装：
+The desktop app's profile is managed exclusively by the app, and `dsh plugin` refuses to touch it, so install from inside the app:
 
-1. 打开 DSH → 侧栏 **插件** → **添加插件**
-2. 填入本目录的绝对路径（例如 `link:` 或直接给路径，取决于你的 DSH 版本）
-3. 安装后重启应用
-4. 进 **设置**，导航里会多出「Token 用量」
+1. Open DSH → sidebar **Plugins** → **Add plugin**
+2. Enter the absolute path to this directory (the CLI form is `dsh plugin add "link:<path>"`)
+3. Install, then restart the app
+4. Open **Settings** — a "Token Usage" entry appears in the navigation
 
-卸载：同一页面的组合包卡片 → 卸载。
+Uninstall: open the bundle's card on the same page → Uninstall.
 
-## 配置
+## Configuration
 
-可选，写在 bundle 行的 `config` 里，不填就用默认值。
+Optional, set in the bundle row's `config`. Defaults apply when omitted.
 
-| 键 | 默认 | 说明 |
+| Key | Default | Meaning |
 | --- | --- | --- |
-| `timeZone` | `Asia/Shanghai` | 按哪个时区切"一天" |
-| `sessionsRoot` | `<DSH_HOME>/sessions` | 会话日志根目录 |
-| `maxDepth` | `2` | 目录下钻深度（项目 / 会话两层） |
+| `timeZone` | `Asia/Shanghai` | Which time zone decides a "day" |
+| `sessionsRoot` | `<DSH_HOME>/sessions` | Session log root directory |
+| `maxDepth` | `2` | Directory depth to walk (project / session) |
 
-## 结构
+## Layout
 
-| 路径 | 说明 |
+| Path | Purpose |
 | --- | --- |
-| `lib/index.js` | 宿主侧：逐帧解压会话日志、按天聚合、注册 `/dsh-token-heatmap/data` |
-| `client.js` | 浏览器侧：注册进 `settings.section` 的 React 组件（热力图与切换） |
-| `package.json` | 清单：`dsh.bundle.patch` 声明挂载，`dsh.client` 声明浏览器半侧 |
-| `cordis.patch.yml` | 挂载声明；`insert` 的 `name` 必须与包名完全一致 |
-| `tools/test-plugin.mjs` | 拿真实会话日志跑宿主侧聚合 |
-| `tools/test-apply.mjs` | 用桩 Cordis 上下文跑 `apply()`，验证路由注册 |
-| `tools/test-weekly.mjs` | 验算每周聚合：周边界、跨月刻度、不重复计数 |
+| `lib/index.js` | Host side: frame-by-frame decompression, daily aggregation, serves `/dsh-token-heatmap/data` |
+| `client.js` | Browser side: the React component registered into `settings.section` |
+| `package.json` | Manifest: `dsh.bundle.patch` for mounting, `dsh.client` for the browser half |
+| `cordis.patch.yml` | Mount declaration; the `insert` `name` must match the package name exactly |
+| `tools/test-plugin.mjs` | Runs the host-side aggregation over real session logs |
+| `tools/test-apply.mjs` | Runs `apply()` against a stub Cordis context to check route registration |
+| `tools/test-weekly.mjs` | Verifies weekly aggregation: week boundaries, month ticks, no double counting |
 
-自测（需要本机已有 DSH 会话日志）：
+Self-tests (require existing DSH session logs on the machine):
 
 ```bash
 node tools/test-plugin.mjs
@@ -86,17 +86,13 @@ node tools/test-apply.mjs
 node tools/test-weekly.mjs
 ```
 
-## 实现要点
+## Implementation notes
 
-**UI 走 slot，不自己塞 DOM。** 组件注册进 `settings.section`，只渲染 React 元素；
-不 import 任何 Harness Client 包，样式自己写、只用主题变量。
-（DSH 插件规范明确禁止往 `document.body` 追加元素或替换应用根节点。）
+**The UI goes through a slot, it does not inject DOM.** The component registers into `settings.section` and only renders React elements. It imports no Harness client package and writes its own styles using theme tokens only. (The DSH plugin guide explicitly forbids appending to `document.body` or replacing the app root.)
 
-**自适应尺寸。** `ResizeObserver` 量容器宽度，算出每格边长写进 CSS 变量 `--dth-cell`：
-一年 53 列在 640–900px 宽度下分别得到 9–13px 的格子，永远刚好放下。
+**Adaptive sizing.** A `ResizeObserver` measures the container and computes each cell's edge length into the CSS variable `--dth-cell`. One year of 53 columns yields 9–13px cells between 640px and 900px of available width, always fitting exactly.
 
-**周对齐。** 起点取"今天所在周的周日"，因此每列都是完整自然周；今天之后的格子留空。
-月份刻度贴在"包含该月 1 号"的那一列，所以永远与列对齐。
+**Week alignment.** The range starts on the Sunday of the current week, so every column is a complete natural week, and cells after today stay empty. The month tick is placed on the column that contains the 1st of that month, so it always lines up with the grid.
 
 ## License
 

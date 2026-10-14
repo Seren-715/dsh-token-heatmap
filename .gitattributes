@@ -1,0 +1,5 @@
+# 仓库内统一用 LF：插件要在 Windows / macOS / Linux 上被 DSH 加载，
+# 不统一换行会让 diff 噪音很大。
+* text=auto eol=lf
+*.png binary
+*.ico binary

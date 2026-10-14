@@ -1,0 +1,38 @@
+{
+  "name": "dsh-token-heatmap",
+  "version": "0.2.0",
+  "private": true,
+  "description": "DSH 设置里的一节：按天统计你在 DSH 里消耗的 token，颜色越深用量越大。",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "token",
+    "usage",
+    "heatmap"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "lib",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "license": "MIT"
+}

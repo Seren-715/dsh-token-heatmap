@@ -8,6 +8,16 @@ All data comes from DSH's own local session logs — **no network requests, no s
 
 > **Privacy**: this plugin makes no outbound requests. Session logs are read on the local machine only, and the aggregated result is served to your local DSH page. The repository contains no personal data or credentials.
 
+## Screenshots
+
+Settings → **Token usage**, on a daily view (English UI):
+
+![English interface](docs/screenshot-en.png)
+
+The same section with the UI switched to Chinese — every label, month tick and number unit follows the language:
+
+![Chinese interface](docs/screenshot-zh.png)
+
 ## Features
 
 - **Daily / Weekly** toggle: one cell per day, or one cell per week (a whole column shares one colour)

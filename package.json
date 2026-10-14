@@ -1,8 +1,8 @@
 {
   "name": "dsh-token-heatmap",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
-  "description": "DSH 设置里的一节：按天/周统计你在 DSH 里消耗的 token，颜色越深用量越大。 / A daily token-usage heatmap section for the DSH settings page.",
+  "description": "Daily token heatmap in DSH settings, from local logs. ｜ DSH 设置里的每日 token 用量热力图，取自本机会话日志。",
   "keywords": [
     "dsh",
     "dsh-plugin",

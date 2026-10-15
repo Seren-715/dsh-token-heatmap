@@ -14,7 +14,7 @@ All data comes from DSH's own local session logs — **no external network reque
 
 Open Settings → **Token usage**. The default range is six months. Choose total, input+output, cache read or output, and switch between daily and weekly views. The range selector offers six months or a full year; the year is split into two rows.
 
-Hover a cell to see the cell's date, the selected metric's Token count and a click hint. The outline indicates hover or selection; today's cell has no default highlight.
+Hover a date cell to display three lines: the date (YYYY-MM-DD), the selected metric's Token count, and “Click to view details”. The example below shows 2026-10-13 with a total of 117,405,946 Token. Clicking the cell opens that day's breakdown below the heatmap. The outline indicates hover or selection; today's cell has no default highlight.
 
 ![English half-year heatmap and tooltip](docs/heatmap-en.png)
 

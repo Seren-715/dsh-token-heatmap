@@ -131,7 +131,6 @@ window.__ModuleLoader__.load({
 .dth-cell[data-level='2'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 48%, transparent); }
 .dth-cell[data-level='3'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 72%, transparent); }
 .dth-cell[data-level='4'] { background: var(--dsw-alias-label-primary, #555); }
-.dth-cell[data-today='true'] { outline: 1px solid var(--dsw-alias-label-primary, currentColor); outline-offset: 1px; }
 .dth-legend { display: flex; align-items: center; gap: 4px; }
 .dth-legend i.dth-cell { display: block; width: 10px; height: 10px; }
 /* 月份刻度与上面每一列一一对应：同宽同序，标签不参与排版偏移。 */
@@ -464,7 +463,6 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           key,
           className: 'dth-cell',
           'data-level': String(levelOf(valueOf(record, metric), dayCuts)),
-          ...(key === todayKey ? { 'data-today': 'true' } : {}),
           ...hoverHandlers(`${t(METRIC_KEYS[metric])} ${formatFull(valueOf(record, metric))} Token\n${t('tipClick')}`, key, week, weekday)
         });
       });
@@ -479,7 +477,6 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           key: `k${week}-${date.getDay()}`,
           className: 'dth-cell',
           'data-level': String(levelOf(value, weekCuts)),
-          ...(date.getTime() === today.getTime() ? { 'data-today': 'true' } : {}),
           ...hoverHandlers(text, key, week, weekday)
         });
       });

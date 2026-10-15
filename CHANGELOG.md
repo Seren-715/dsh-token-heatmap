@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Standardize source and documentation formatting with EditorConfig and Prettier.
+- Remove obsolete injection documentation, unused client metadata and superseded screenshots.
+- Clarify metric definitions and replace unsupported performance claims.
+- Make client fixtures independent of the current date and update calendar tests.
+- Include the aggregation time zone in cache invalidation and verify it with synthetic logs.
+- Verify route disposal and compare complete daily/model cache results.
+
 ## 0.4.0 — 2026-10-15
 
 - 默认近半年；全年分上下两排，放大日期格并按容器适配，避免横向滚动条。

@@ -5,10 +5,10 @@
  * 消耗的 token 越多。数据从宿主侧的 `/dsh-token-heatmap/data` 取（同源）。
  *
  * 规范约束（DSH 插件开发文档）：
- *   * 只往 slot 里注册 React 组件，绝不往 `document.body` 塞浮层、不替换应用根节点；
+ *   * 通过 slot 注册 React 组件，不向 `document.body` 追加浮层、不替换应用根节点；
  *   * 不 import 任何 Harness Client 包，React 从浏览器模块表里取；样式自己写，
- *     只用 `--dsw-alias-*` 主题变量，深浅色随之自动跟随；
- *   * **可见文案一律走 Client locale 服务**，不硬编码——否则切界面语言时这一节不动；
+ *     优先使用 `--dsw-alias-*` 主题变量，深浅色随之自动跟随；
+ *   * 可见文案通过 Client locale 服务提供，以响应宿主语言切换；
  *   * 样式与请求都挂在组件生命周期里，卸载即清理。
  */
 
@@ -22,16 +22,19 @@ window.__ModuleLoader__.load({
     const DATA_URLS = ['/dsh-token-heatmap/data', 'dsh-token-heatmap/data'];
     const YEAR_WEEKS = 53;
     const HALF_YEAR_WEEKS = 26;
-    const WEEKDAYS = {
-      zh: ['日', '一', '二', '三', '四', '五', '六'],
-      en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    };
-
     /** 两个内置语言必须齐全（locale 服务的要求），键一一对应。 */
     const DICTIONARIES = {
       zh: {
         navLabel: 'Token 用量',
-        detailTitle: '当日 Token 使用详情', detailTotal: '当日总量', includesCache: 'Token · 含缓存读取', composition: '用量构成 · 按 Token 数量', other: '其他', tipCacheWrite: '缓存写入', openDay: '查看 {day} 当天详情', tipClick: '点击查看详情', tipWeekAmount: '本周',
+        detailTitle: '当日 Token 使用详情',
+        detailTotal: '当日总量',
+        includesCache: 'Token · 含缓存读取',
+        composition: '用量构成 · 按 Token 数量',
+        other: '其他',
+        tipCacheWrite: '缓存写入',
+        openDay: '查看 {day} 当天详情',
+        tipClick: '点击查看详情',
+        tipWeekAmount: '本周',
         metricTotal: '总量',
         metricIo: '输入+输出',
         metricCacheRead: '缓存读',
@@ -43,24 +46,32 @@ window.__ModuleLoader__.load({
         summaryTotal: '合计',
         loading: '统计中…',
         loadFailed: '加载失败：{message}',
-        rangeHalf: '近半年', rangeYear: '近一年', rangeLabel: '时间范围',
+        rangeHalf: '近半年',
+        rangeYear: '近一年',
+        rangeLabel: '时间范围',
         rangeHintDay: '一格一天（一列 7 天）',
         rangeHintWeek: '一格一周（整列同色）',
         noRecord: '无用量记录',
-        tipTotal: '总量',
         tipInput: '输入',
         tipOutput: '输出',
         tipCacheRead: '缓存读',
         tipCalls: '调用',
-        tipWeekIf: '{start} 起的一周',
-        tipWeek: '{start} 起的一周（本周未完）',
         legendLess: '少',
         legendMore: '多',
-        footnote: '数据来自本机 DSH 会话日志，按本地日历日汇总（每周口径按自然周相加）。「总量」含缓存读；看实际消耗请选「输入+输出」。'
+        footnote:
+          '数据来自本机 DSH 会话日志，按本地日历日汇总（每周口径按自然周相加）。「总量」包含缓存读取；「输入+输出」仅统计这两项，不代表账单金额。'
       },
       en: {
         navLabel: 'Token usage',
-        detailTitle: 'Daily token usage', detailTotal: 'Daily total', includesCache: 'Token · includes cache reads', composition: 'Usage composition · by token count', other: 'Other', tipCacheWrite: 'Cache write', openDay: 'View details for {day}', tipClick: 'Click to view details', tipWeekAmount: 'This week',
+        detailTitle: 'Daily token usage',
+        detailTotal: 'Daily total',
+        includesCache: 'Token · includes cache reads',
+        composition: 'Usage composition · by token count',
+        other: 'Other',
+        tipCacheWrite: 'Cache write',
+        openDay: 'View details for {day}',
+        tipClick: 'Click to view details',
+        tipWeekAmount: 'This week',
         metricTotal: 'Total',
         metricIo: 'Input+output',
         metricCacheRead: 'Cache read',
@@ -72,20 +83,20 @@ window.__ModuleLoader__.load({
         summaryTotal: 'All time',
         loading: 'Loading…',
         loadFailed: 'Failed to load: {message}',
-        rangeHalf: 'Last 6 months', rangeYear: 'Last year', rangeLabel: 'Time range',
+        rangeHalf: 'Last 6 months',
+        rangeYear: 'Last year',
+        rangeLabel: 'Time range',
         rangeHintDay: 'One cell per day (7 rows)',
         rangeHintWeek: 'One cell per week (whole column)',
         noRecord: 'No usage recorded',
-        tipTotal: 'Total',
         tipInput: 'Input',
         tipOutput: 'Output',
         tipCacheRead: 'Cache read',
         tipCalls: 'Calls',
-        tipWeekIf: 'Week of {start}',
-        tipWeek: 'Week of {start} (in progress)',
         legendLess: 'Less',
         legendMore: 'More',
-        footnote: 'Aggregated from local DSH session logs by calendar day (weekly view sums natural weeks). "Total" includes cache reads; pick "Input+output" to see what you actually spent.'
+        footnote:
+          'Aggregated from local DSH session logs by calendar day (weekly view sums natural weeks). "Total" includes cache reads; "Input+output" counts those two fields only. Token counts do not represent billed costs.'
       }
     };
 
@@ -186,7 +197,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       return day[metric] || 0;
     };
 
-    // 数字单位按语言走：中文用万/亿，英文用 K/M/B（英文界面下显示"1.23 亿"就露馅了）。
+    // Format compact values using the active language units.
     const formatTokens = (value, language) => {
       if (!Number.isFinite(value) || value <= 0) return '0';
       if (language === 'zh') {
@@ -203,8 +214,22 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
     const formatFull = (value) => (Number.isFinite(value) ? value.toLocaleString('en-US') : '0');
 
     // 月份刻度：中文用 "10月"，英文用 "Oct"。
-    const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthLabel = (monthIndex, language) => (language === 'zh' ? `${monthIndex + 1}月` : MONTHS_EN[monthIndex]);
+    const MONTHS_EN = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    const monthLabel = (monthIndex, language) =>
+      language === 'zh' ? `${monthIndex + 1}月` : MONTHS_EN[monthIndex];
 
     // 本地日历日；不用 toISOString，避免时区把日期推错一天。
     const dayKey = (date) => {
@@ -213,12 +238,13 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       return `${date.getFullYear()}-${month}-${day}`;
     };
 
-    // 分位数分级：颜色只反映"你自己"的相对高低，换口径时层次依然可读。
+    // Quantile thresholds encode relative usage for the selected metric.
     const buildCuts = (values) => {
       const sorted = values.filter((value) => value > 0).sort((a, b) => a - b);
-      if (sorted.length === 0) return [0, 0, 0, 0];
-      const at = (fraction) => sorted[Math.min(sorted.length - 1, Math.floor(fraction * sorted.length))];
-      return [at(0.25), at(0.5), at(0.75), at(0.95)];
+      if (sorted.length === 0) return [0, 0, 0];
+      const at = (fraction) =>
+        sorted[Math.min(sorted.length - 1, Math.floor(fraction * sorted.length))];
+      return [at(0.25), at(0.5), at(0.75)];
     };
 
     const levelOf = (value, cuts) => {
@@ -233,7 +259,10 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       let lastError = null;
       for (const url of DATA_URLS) {
         try {
-          const response = await fetch(url, { headers: { accept: 'application/json' }, credentials: 'same-origin' });
+          const response = await fetch(url, {
+            headers: { accept: 'application/json' },
+            credentials: 'same-origin'
+          });
           if (!response.ok) {
             lastError = new Error(`HTTP ${response.status}`);
             continue;
@@ -246,7 +275,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       throw lastError instanceof Error ? lastError : new Error('unavailable');
     };
 
-    /** 组件用不到翻译时给一个回退：优先用框架注入的 t 席位。 */
+    /** Resolve the injected translation function before using the namespace binding. */
     const makeTranslate = (props, bound) => {
       if (typeof props?.t === 'function') return props.t;
       if (typeof bound === 'function') return bound;
@@ -297,7 +326,8 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         const locale = props?.locale;
         if (locale === undefined || typeof locale.subscribe !== 'function') return;
         const read = () => {
-          const snapshot = typeof locale.getSnapshot === 'function' ? locale.getSnapshot() : undefined;
+          const snapshot =
+            typeof locale.getSnapshot === 'function' ? locale.getSnapshot() : undefined;
           const active = snapshot?.active;
           if (typeof active === 'string' && active !== '') setLanguage(active);
         };
@@ -315,8 +345,8 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         };
       }, []);
 
-      // 自动刷新：挂载时拉一次，之后每分钟拉一次，并在页面重新可见/获得焦点时补拉。
-      // 后端有文件级缓存（按 size+mtime 失效），一分钟一次几乎不耗资源。
+      // Request data on mount, every minute, and when the page becomes visible or focused.
+      // File-level caching on the host reduces repeated parsing.
       React.useEffect(() => {
         let alive = true;
         let inFlight = false;
@@ -330,8 +360,15 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
               setFailure(null);
             }
           } catch (error) {
-            // 已经拿到过数据就不要因为一次刷新失败把画面清空。
-            if (alive) setFailure((previous) => (previous === null ? (error instanceof Error ? error.message : String(error)) : previous));
+            // Preserve existing data when a refresh fails.
+            if (alive)
+              setFailure((previous) =>
+                previous === null
+                  ? error instanceof Error
+                    ? error.message
+                    : String(error)
+                  : previous
+              );
           } finally {
             inFlight = false;
           }
@@ -371,12 +408,11 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayKey = dayKey(today);
-      const weekdayNames = WEEKDAYS[language] ?? WEEKDAYS.en;
 
       const days = payload?.days ?? [];
       const byDay = new Map(days.map((day) => [day.day, day]));
 
-      // 近一年：起点取"今天所在周的周日"，保证每一列都是完整自然周，
+      // 从当前周周日向前回溯所选周数，保持自然周对齐，
       // 末尾多出来的几天（今天之后）留空。
       const start = new Date(today);
       start.setDate(start.getDate() - start.getDay() - (weeks - 1) * 7);
@@ -393,9 +429,12 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         const date = at(offset);
         if (date.getTime() > today.getTime()) continue;
         const bucket = (weekTotals[Math.floor(offset / 7)] ??= {
-          weekStart: new Date(date),
-          totalTokens: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0,
-          calls: 0, done: false, lastDay: null
+          totalTokens: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          calls: 0
         });
         const record = byDay.get(dayKey(date));
         if (record !== undefined) {
@@ -406,8 +445,6 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           bucket.cacheWriteTokens += record.cacheWriteTokens || 0;
           bucket.calls += record.calls || 0;
         }
-        if (date.getTime() === today.getTime() || date.getDay() === 6) bucket.done = true;
-        bucket.lastDay = dayKey(date);
       }
 
       const dayValues = days.map((day) => valueOf(day, metric));
@@ -422,15 +459,31 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           let label = '';
           for (let weekday = 0; weekday < 7; weekday += 1) {
             const date = at(week * 7 + weekday);
-            if (label === '' && (date.getDate() === 1 || (week % columnsPerRow === 0 && weekday === 0))) label = monthLabel(date.getMonth(), language);
+            if (
+              label === '' &&
+              (date.getDate() === 1 || (week % columnsPerRow === 0 && weekday === 0))
+            )
+              label = monthLabel(date.getMonth(), language);
             if (date.getTime() > today.getTime()) {
-              columnCells.push(h('div', { key: `x${week}-${weekday}`, className: 'dth-cell', style: { visibility: 'hidden' } }));
+              columnCells.push(
+                h('div', {
+                  key: `x${week}-${weekday}`,
+                  className: 'dth-cell',
+                  style: { visibility: 'hidden' }
+                })
+              );
               continue;
             }
             columnCells.push(cellsFor({ week, weekday, date, key: dayKey(date) }));
           }
           columns.push(h('div', { key: `w${week}`, className: 'dth-week' }, columnCells));
-          labels.push(h('div', { key: `m${week}`, className: 'dth-month' }, label === '' ? null : h('span', null, label)));
+          labels.push(
+            h(
+              'div',
+              { key: `m${week}`, className: 'dth-month' },
+              label === '' ? null : h('span', null, label)
+            )
+          );
         }
         return { columns, labels };
       };
@@ -443,27 +496,47 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         'data-selected': String(selectedDay === key),
         'aria-pressed': selectedDay === key,
         'aria-controls': 'dth-day-detail',
-        style: { '--dth-delay': `${Math.round((week + weekday) / (weeks + 5) * 420)}ms` },
-        onMouseEnter: (event) => { setHighlight(key); setTip({ text, x: event.clientX, y: event.clientY }); },
-        onMouseLeave: () => { setHighlight(null); setTip(null); },
+        style: { '--dth-delay': `${Math.round(((week + weekday) / (weeks + 5)) * 420)}ms` },
+        onMouseEnter: (event) => {
+          setHighlight(key);
+          setTip({ text, x: event.clientX, y: event.clientY });
+        },
+        onMouseLeave: () => {
+          setHighlight(null);
+          setTip(null);
+        },
         onFocus: (event) => {
           const rect = event.currentTarget.getBoundingClientRect();
-          setHighlight(key); setTip({ text, x: rect.left, y: rect.top });
+          setHighlight(key);
+          setTip({ text, x: rect.left, y: rect.top });
         },
-        onBlur: () => { setHighlight(null); setTip(null); },
-        onKeyDown: (event) => { if (event.key === 'Escape') { setTip(null); setHighlight(null); } },
+        onBlur: () => {
+          setHighlight(null);
+          setTip(null);
+        },
+        onKeyDown: (event) => {
+          if (event.key === 'Escape') {
+            setTip(null);
+            setHighlight(null);
+          }
+        },
         onClick: () => openDay(key)
       });
 
       // 每天视图：一格一天，四档分位色阶。
       const dayCuts = buildCuts(dayValues);
-      const dayView = buildColumns(({ week, weekday, date, key }) => {
+      const dayView = buildColumns(({ week, weekday, key }) => {
         const record = byDay.get(key);
         return h('button', {
           key,
           className: 'dth-cell',
           'data-level': String(levelOf(valueOf(record, metric), dayCuts)),
-          ...hoverHandlers(`${t(METRIC_KEYS[metric])} ${formatFull(valueOf(record, metric))} Token\n${t('tipClick')}`, key, week, weekday)
+          ...hoverHandlers(
+            `${t(METRIC_KEYS[metric])} ${formatFull(valueOf(record, metric))} Token\n${t('tipClick')}`,
+            key,
+            week,
+            weekday
+          )
         });
       });
 
@@ -484,134 +557,296 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       const activeView = mode === 'day' ? dayView : weekView;
       const heatmapRows = [];
       for (let offset = 0; offset < weeks; offset += columnsPerRow) {
-        heatmapRows.push(h('div', { key: `row-${offset}`, className: 'dth-heatmap-row' },
-          h('div', { className: 'dth-weeks', 'data-ready': String(payload !== null), 'data-enter': String(payload !== null && entering), 'data-engaged': String(highlight !== null) }, activeView.columns.slice(offset, offset + columnsPerRow)),
-          h('div', { className: 'dth-months' }, activeView.labels.slice(offset, offset + columnsPerRow))
-        ));
+        heatmapRows.push(
+          h(
+            'div',
+            { key: `row-${offset}`, className: 'dth-heatmap-row' },
+            h(
+              'div',
+              {
+                className: 'dth-weeks',
+                'data-ready': String(payload !== null),
+                'data-enter': String(payload !== null && entering),
+                'data-engaged': String(highlight !== null)
+              },
+              activeView.columns.slice(offset, offset + columnsPerRow)
+            ),
+            h(
+              'div',
+              { className: 'dth-months' },
+              activeView.labels.slice(offset, offset + columnsPerRow)
+            )
+          )
+        );
       }
 
       const currentWeek = weekTotals[weeks - 1];
-      const summary = failure !== null
-        ? h('span', { className: 'dth-error' }, t('loadFailed', { message: failure }))
-        : payload === null
-          ? t('loading')
-          : h(React.Fragment, null,
-            `${t('summaryToday')} `,
-            h('b', null, formatTokens(valueOf(byDay.get(todayKey), metric), language)),
-            ` · ${t('summaryWeek')} `,
-            h('b', null, formatTokens(currentWeek === undefined ? 0 : valueOf(currentWeek, metric), language)),
-            ` · ${t('summaryTotal')} `,
-            h('b', null, formatTokens(payload.totalTokens ?? 0, language))
-          );
+      const summary =
+        failure !== null
+          ? h('span', { className: 'dth-error' }, t('loadFailed', { message: failure }))
+          : payload === null
+            ? t('loading')
+            : h(
+                React.Fragment,
+                null,
+                `${t('summaryToday')} `,
+                h('b', null, formatTokens(valueOf(byDay.get(todayKey), metric), language)),
+                ` · ${t('summaryWeek')} `,
+                h(
+                  'b',
+                  null,
+                  formatTokens(
+                    currentWeek === undefined ? 0 : valueOf(currentWeek, metric),
+                    language
+                  )
+                ),
+                ` · ${t('summaryTotal')} `,
+                h('b', null, formatTokens(payload.totalTokens ?? 0, language))
+              );
 
       const renderDetail = () => {
         const record = byDay.get(selectedDay) ?? {};
         const total = record.totalTokens || 0;
         const parts = [
-          ['tipInput', 'inputTokens'], ['tipOutput', 'outputTokens'],
-          ['tipCacheRead', 'cacheReadTokens'], ['tipCacheWrite', 'cacheWriteTokens']
-        ].map(([label, field]) => ({ label: t(label), field, value: Math.max(0, record[field] || 0) }));
+          ['tipInput', 'inputTokens'],
+          ['tipOutput', 'outputTokens'],
+          ['tipCacheRead', 'cacheReadTokens'],
+          ['tipCacheWrite', 'cacheWriteTokens']
+        ].map(([label, field]) => ({
+          label: t(label),
+          field,
+          value: Math.max(0, record[field] || 0)
+        }));
         const componentTotal = parts.reduce((sum, part) => sum + part.value, 0);
-        if (total > componentTotal) parts.push({ label: t('other'), field: 'other', value: total - componentTotal });
+        if (total > componentTotal)
+          parts.push({ label: t('other'), field: 'other', value: total - componentTotal });
         const compositionTotal = Math.max(total, componentTotal);
-        const visibleParts = parts.filter(part => part.value > 0);
-        const percentOf = part => part.value / compositionTotal * 100;
-        const partLabel = part => `${part.label} ${percentOf(part).toFixed(2)}%`;
+        const visibleParts = parts.filter((part) => part.value > 0);
+        const percentOf = (part) => (part.value / compositionTotal) * 100;
+        const partLabel = (part) => `${part.label} ${percentOf(part).toFixed(2)}%`;
         const date = new Date(`${selectedDay}T12:00:00`);
-        const title = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        return h('section', { id: 'dth-day-detail', className: 'dth-detail', 'aria-label': t('detailTitle'), 'aria-live': 'polite', 'aria-atomic': 'true' },
+        const title = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        return h(
+          'section',
+          {
+            id: 'dth-day-detail',
+            className: 'dth-detail',
+            'aria-label': t('detailTitle'),
+            'aria-live': 'polite',
+            'aria-atomic': 'true'
+          },
           h('div', null, h('h3', null, title), h('p', { className: 'dth-note' }, t('detailTitle'))),
-          h('div', null, h('p', { className: 'dth-note' }, t('detailTotal')), h('div', { className: 'dth-total' }, formatTokens(total, language)), h('p', { className: 'dth-note' }, `${formatFull(total)} ${t('includesCache')}`)),
+          h(
+            'div',
+            null,
+            h('p', { className: 'dth-note' }, t('detailTotal')),
+            h('div', { className: 'dth-total' }, formatTokens(total, language)),
+            h('p', { className: 'dth-note' }, `${formatFull(total)} ${t('includesCache')}`)
+          ),
           byDay.has(selectedDay) ? null : h('p', { className: 'dth-note' }, t('noRecord')),
-          h('dl', { className: 'dth-stats' }, [
-            ['tipInput', 'inputTokens'], ['tipOutput', 'outputTokens'], ['tipCacheRead', 'cacheReadTokens'],
-            ...(record.cacheWriteTokens > 0 ? [['tipCacheWrite', 'cacheWriteTokens']] : []), ['tipCalls', 'calls']
-          ].map(([label, field]) => h('div', { key: field }, h('dt', null, t(label)), h('dd', null, formatFull(record[field] || 0))))) ,
-          h('div', null,
-            h('p', { className: 'dth-note' }, t('composition')),
-            h('div', { className: 'dth-bar', role: 'img', 'aria-label': compositionTotal > 0 ? visibleParts.map(partLabel).join(', ') : t('noRecord') },
-              visibleParts.map(part => h('span', { key: part.field, className: 'dth-bar-segment dth-part', 'data-part': part.field, 'aria-hidden': 'true', style: { width: `${percentOf(part)}%` } }))
-            ),
-            compositionTotal <= 0 ? h('p', { className: 'dth-note' }, t('noRecord')) : h('div', { className: 'dth-composition' },
-              visibleParts.map(part => h('span', { key: part.field }, h('i', { className: 'dth-swatch dth-part', 'data-part': part.field, 'aria-hidden': 'true' }), partLabel(part)))
+          h(
+            'dl',
+            { className: 'dth-stats' },
+            [
+              ['tipInput', 'inputTokens'],
+              ['tipOutput', 'outputTokens'],
+              ['tipCacheRead', 'cacheReadTokens'],
+              ...(record.cacheWriteTokens > 0 ? [['tipCacheWrite', 'cacheWriteTokens']] : []),
+              ['tipCalls', 'calls']
+            ].map(([label, field]) =>
+              h(
+                'div',
+                { key: field },
+                h('dt', null, t(label)),
+                h('dd', null, formatFull(record[field] || 0))
+              )
             )
+          ),
+          h(
+            'div',
+            null,
+            h('p', { className: 'dth-note' }, t('composition')),
+            h(
+              'div',
+              {
+                className: 'dth-bar',
+                role: 'img',
+                'aria-label':
+                  compositionTotal > 0 ? visibleParts.map(partLabel).join(', ') : t('noRecord')
+              },
+              visibleParts.map((part) =>
+                h('span', {
+                  key: part.field,
+                  className: 'dth-bar-segment dth-part',
+                  'data-part': part.field,
+                  'aria-hidden': 'true',
+                  style: { width: `${percentOf(part)}%` }
+                })
+              )
+            ),
+            compositionTotal <= 0
+              ? h('p', { className: 'dth-note' }, t('noRecord'))
+              : h(
+                  'div',
+                  { className: 'dth-composition' },
+                  visibleParts.map((part) =>
+                    h(
+                      'span',
+                      { key: part.field },
+                      h('i', {
+                        className: 'dth-swatch dth-part',
+                        'data-part': part.field,
+                        'aria-hidden': 'true'
+                      }),
+                      partLabel(part)
+                    )
+                  )
+                )
           )
         );
       };
 
-      return h('div', { className: 'dth-root', ref: frameRef, style: { '--dth-cell': `${cell}px` } },
-        h('div', { className: 'dth-overview' },
-        h('div', { className: 'dth-head' },
-          h('div', { className: 'dth-seg' },
-            METRICS.map((key) => h('button', {
-              key,
-              type: 'button',
-              'data-active': String(key === metric),
-              'aria-pressed': key === metric,
-              onClick: () => setMetric(key)
-            }, t(METRIC_KEYS[key])))
+      return h(
+        'div',
+        { className: 'dth-root', ref: frameRef, style: { '--dth-cell': `${cell}px` } },
+        h(
+          'div',
+          { className: 'dth-overview' },
+          h(
+            'div',
+            { className: 'dth-head' },
+            h(
+              'div',
+              { className: 'dth-seg' },
+              METRICS.map((key) =>
+                h(
+                  'button',
+                  {
+                    key,
+                    type: 'button',
+                    'data-active': String(key === metric),
+                    'aria-pressed': key === metric,
+                    onClick: () => setMetric(key)
+                  },
+                  t(METRIC_KEYS[key])
+                )
+              )
+            ),
+            h(
+              'div',
+              { className: 'dth-seg', 'data-align': 'end' },
+              MODES.map((entry) =>
+                h(
+                  'button',
+                  {
+                    key: entry.key,
+                    type: 'button',
+                    'data-active': String(entry.key === mode),
+                    'aria-pressed': entry.key === mode,
+                    onClick: () => setMode(entry.key)
+                  },
+                  t(entry.labelKey)
+                )
+              )
+            )
           ),
-          h('div', { className: 'dth-seg', 'data-align': 'end' },
-            MODES.map((entry) => h('button', {
-              key: entry.key,
-              type: 'button',
-              'data-active': String(entry.key === mode),
-              'aria-pressed': entry.key === mode,
-              onClick: () => setMode(entry.key)
-            }, t(entry.labelKey)))
-          )
-        ),
-        h('div', { className: 'dth-line' }, h('span', { className: 'dth-summary' }, summary)),
-        h('div', { className: 'dth-scroll' }, heatmapRows),
-        h('div', { className: 'dth-foot' },
-          h('div', { className: 'dth-seg', role: 'group', 'aria-label': t('rangeLabel') },
-            ['half', 'year'].map((key) => h('button', {
-              key, type: 'button', 'data-active': String(range === key), 'aria-pressed': range === key,
-              onClick: () => { setRange(key); setEntering(false); setTip(null); setHighlight(null); }
-            }, t(key === 'half' ? 'rangeHalf' : 'rangeYear')))
+          h('div', { className: 'dth-line' }, h('span', { className: 'dth-summary' }, summary)),
+          h('div', { className: 'dth-scroll' }, heatmapRows),
+          h(
+            'div',
+            { className: 'dth-foot' },
+            h(
+              'div',
+              { className: 'dth-seg', role: 'group', 'aria-label': t('rangeLabel') },
+              ['half', 'year'].map((key) =>
+                h(
+                  'button',
+                  {
+                    key,
+                    type: 'button',
+                    'data-active': String(range === key),
+                    'aria-pressed': range === key,
+                    onClick: () => {
+                      setRange(key);
+                      setEntering(false);
+                      setTip(null);
+                      setHighlight(null);
+                    }
+                  },
+                  t(key === 'half' ? 'rangeHalf' : 'rangeYear')
+                )
+              )
+            ),
+            h('span', null, t(mode === 'day' ? 'rangeHintDay' : 'rangeHintWeek')),
+            h(
+              'span',
+              { className: 'dth-legend' },
+              t('legendLess'),
+              [1, 2, 3, 4].map((level) =>
+                h('i', { key: level, className: 'dth-cell', 'data-level': String(level) })
+              ),
+              t('legendMore')
+            )
           ),
-          h('span', null, t(mode === 'day' ? 'rangeHintDay' : 'rangeHintWeek')),
-          h('span', { className: 'dth-legend' },
-            t('legendLess'),
-            [1, 2, 3, 4].map((level) => h('i', { key: level, className: 'dth-cell', 'data-level': String(level) })),
-            t('legendMore')
-          )
+          h('p', { className: 'dth-note' }, t('footnote'))
         ),
-        h('p', { className: 'dth-note' }, t('footnote'))),
         selectedDay === null ? null : renderDetail(),
-        tip === null ? null : h('div', {
-          className: 'dth-tip',
-          'data-show': 'true',
-          style: {
-            left: `${Math.min(tip.x + 12, (window.innerWidth || 1200) - 250)}px`,
-            top: `${Math.max(8, tip.y - 76)}px`
-          }
-        }, tip.text)
+        tip === null
+          ? null
+          : h(
+              'div',
+              {
+                className: 'dth-tip',
+                'data-show': 'true',
+                style: {
+                  left: `${Math.min(tip.x + 12, (window.innerWidth || 1200) - 250)}px`,
+                  top: `${Math.max(8, tip.y - 76)}px`
+                }
+              },
+              tip.text
+            )
       );
     }
 
     return {
       inject: ['slots', 'locale'],
       apply(ctx) {
-        // ① 注册本节的文案字典。两个内置语言必须齐全，否则 register 会抛。
+        // Register the complete bilingual dictionary.
         try {
-          ctx.effect(() => ctx.locale.register(LOCALE_NS, DICTIONARIES), 'dsh-token-heatmap: locale dictionaries');
+          ctx.effect(
+            () => ctx.locale.register(LOCALE_NS, DICTIONARIES),
+            'dsh-token-heatmap: locale dictionaries'
+          );
         } catch (error) {
-          console.warn(`dsh-token-heatmap: locale registration failed: ${error instanceof Error ? error.message : String(error)}`);
+          console.warn(
+            `dsh-token-heatmap: locale registration failed: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
-        const tBound = typeof ctx.locale?.bind === 'function' ? ctx.locale.bind(LOCALE_NS) : undefined;
+        const tBound =
+          typeof ctx.locale?.bind === 'function' ? ctx.locale.bind(LOCALE_NS) : undefined;
 
-        // ② 注册设置页的一节。
+        // Register the settings section.
         try {
-          ctx.slots.inject('settings.section', () => ctx.slots.register({
-            name: 'settings.section',
-            id: 'token-heatmap',
-            order: 20,
-            label: () => (typeof tBound === 'function' ? tBound('navLabel') : 'Token usage'),
-            locale: LOCALE_NS
-          }, (props) => TokenHeatmap({ ...props, locale: ctx.locale, tBound })));
+          ctx.slots.inject('settings.section', () =>
+            ctx.slots.register(
+              {
+                name: 'settings.section',
+                id: 'token-heatmap',
+                order: 20,
+                label: () => (typeof tBound === 'function' ? tBound('navLabel') : 'Token usage'),
+                locale: LOCALE_NS
+              },
+              (props) => TokenHeatmap({ ...props, locale: ctx.locale, tBound })
+            )
+          );
         } catch (error) {
-          console.warn(`dsh-token-heatmap: settings section registration failed: ${error instanceof Error ? error.message : String(error)}`);
+          console.warn(
+            `dsh-token-heatmap: settings section registration failed: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     };

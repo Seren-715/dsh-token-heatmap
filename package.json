@@ -38,5 +38,17 @@
       ]
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "3.6.2"
+  },
+  "scripts": {
+    "check": "node --check client.js && node --check lib/index.js && prettier --check .",
+    "format": "prettier --write .",
+    "test": "node tools/test-client.mjs && node tools/test-weekly.mjs && node tools/test-host.mjs && node tools/test-apply.mjs",
+    "test:logs": "node tools/test-plugin.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  }
 }

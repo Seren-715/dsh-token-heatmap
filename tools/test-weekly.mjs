@@ -1,8 +1,7 @@
 // 验算"每周"聚合：自然周边界、当天之后的格子不计入、不重复计数、跨月月份刻度。
-// 与 client.js 中的算法逐行对应（同一套日期运算），用于在没有浏览器的环境里核对数值。
+// 独立日历模拟测试；客户端组件的渲染与交互由 test-client.mjs 验证。
 
-const DAYS = 366;
-const WEEKS = Math.ceil(DAYS / 7);
+const WEEKS = 53;
 
 const dayKey = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -16,8 +15,7 @@ function simulate(todayIso, dailyValues) {
   const byDay = new Map(Object.entries(dailyValues));
 
   const start = new Date(today);
-  start.setDate(start.getDate() - (DAYS - 1));
-  start.setDate(start.getDate() - start.getDay());
+  start.setDate(start.getDate() - start.getDay() - (WEEKS - 1) * 7);
   const at = (offset) => {
     const date = new Date(start);
     date.setDate(date.getDate() + offset);
@@ -29,7 +27,11 @@ function simulate(todayIso, dailyValues) {
     const date = at(offset);
     if (date.getTime() > today.getTime()) continue;
     const bucket = (weekTotals[Math.floor(offset / 7)] ??= {
-      weekStart: new Date(date), totalTokens: 0, calls: 0, days: [], lastDay: null
+      weekStart: new Date(date),
+      totalTokens: 0,
+      calls: 0,
+      days: [],
+      lastDay: null
     });
     const record = byDay.get(dayKey(date));
     if (record !== undefined) {
@@ -56,18 +58,20 @@ function simulate(todayIso, dailyValues) {
 // 2026-10-14 是周三，本周为 10-11（周日）～10-17（周六），今天之后留空。
 const today = '2026-10-14T00:00:00';
 const daily = {
-  '2026-10-05': { totalTokens: 100, calls: 1 },  // 上一周（10-04~10-10）内
-  '2026-10-11': { totalTokens: 200, calls: 2 },  // 本周日
-  '2026-10-12': { totalTokens: 300, calls: 3 },  // 本周一
-  '2026-10-13': { totalTokens: 400, calls: 4 },  // 本周二
-  '2026-10-14': { totalTokens: 500, calls: 5 },  // 今天
-  '2026-10-15': { totalTokens: 999, calls: 9 }   // 未来（不该计入）
+  '2026-10-05': { totalTokens: 100, calls: 1 }, // 上一周（10-04~10-10）内
+  '2026-10-11': { totalTokens: 200, calls: 2 }, // 本周日
+  '2026-10-12': { totalTokens: 300, calls: 3 }, // 本周一
+  '2026-10-13': { totalTokens: 400, calls: 4 }, // 本周二
+  '2026-10-14': { totalTokens: 500, calls: 5 }, // 今天
+  '2026-10-15': { totalTokens: 999, calls: 9 } // 未来（不该计入）
 };
 const { start, at, weekTotals, labels } = simulate(today, daily);
 
 const failures = [];
 const check = (label, condition, detail) => {
-  console.log(`  ${condition ? 'OK  ' : 'FAIL'} ${label}${detail === undefined ? '' : ` — ${detail}`}`);
+  console.log(
+    `  ${condition ? 'OK  ' : 'FAIL'} ${label}${detail === undefined ? '' : ` — ${detail}`}`
+  );
   if (!condition) failures.push(label);
 };
 
@@ -76,7 +80,9 @@ todayDate.setHours(0, 0, 0, 0);
 const todayOffset = Math.round((todayDate - start) / 86400000);
 const currentWeek = Math.floor(todayOffset / 7);
 
-console.log(`起点 ${dayKey(start)}（周${start.getDay()}）| 今天第 ${currentWeek} 列，列内偏移 ${todayOffset % 7}`);
+console.log(
+  `起点 ${dayKey(start)}（周${start.getDay()}）| 今天第 ${currentWeek} 列，列内偏移 ${todayOffset % 7}`
+);
 console.log('');
 
 const lastBucket = weekTotals[currentWeek];
@@ -84,8 +90,12 @@ const previousBucket = weekTotals[currentWeek - 1];
 check('本周桶存在', lastBucket !== undefined);
 check('上周桶存在', previousBucket !== undefined);
 
-// 本周 = 10-11(周日) + 10-12 + 10-13 + 10-14；10-15 是周六，尚未到达
-check('本周合计 = 1400（未来 10-15 的 999 不计入）', lastBucket?.totalTokens === 1400, `实际 ${lastBucket?.totalTokens}`);
+// 本周 = 10-11(周日) + 10-12 + 10-13 + 10-14；10-15 是周四，尚未到达
+check(
+  '本周合计 = 1400（未来 10-15 的 999 不计入）',
+  lastBucket?.totalTokens === 1400,
+  `实际 ${lastBucket?.totalTokens}`
+);
 check('上一周 = 100', previousBucket?.totalTokens === 100, `实际 ${previousBucket?.totalTokens}`);
 
 const all = weekTotals.reduce((sum, bucket) => sum + (bucket?.totalTokens ?? 0), 0);
@@ -108,8 +118,11 @@ for (let week = 0; week < WEEKS; week += 1) {
     }
   }
 }
-check('每个月刻度都落在包含该月 1 号的列', firstOfMonthColumns.every((entry) => entry.label === `${entry.month}月`),
-  firstOfMonthColumns.map((entry) => `列${entry.week}->${entry.label}`).join(' '));
+check(
+  '每个月刻度都落在包含该月 1 号的列',
+  firstOfMonthColumns.every((entry) => entry.label === `${entry.month}月`),
+  firstOfMonthColumns.map((entry) => `列${entry.week}->${entry.label}`).join(' ')
+);
 
 // 已到达的格子 = 今天的列内偏移 + 1（含今天）+ 前面完整列
 const arrived = todayOffset + 1;

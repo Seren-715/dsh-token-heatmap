@@ -58,8 +58,7 @@ window.__ModuleLoader__.load({
         tipCalls: '调用',
         legendLess: '少',
         legendMore: '多',
-        footnote:
-          '数据来自本机 DSH 会话日志，按本地日历日汇总（每周口径按自然周相加）。「总量」包含缓存读取；「输入+输出」仅统计这两项，不代表账单金额。'
+        footnote: '数据来自本地 DSH 会话日志。总量包含缓存读取，Token 用量不等于实际费用。'
       },
       en: {
         navLabel: 'Token usage',
@@ -96,7 +95,7 @@ window.__ModuleLoader__.load({
         legendLess: 'Less',
         legendMore: 'More',
         footnote:
-          'Aggregated from local DSH session logs by calendar day (weekly view sums natural weeks). "Total" includes cache reads; "Input+output" counts those two fields only. Token counts do not represent billed costs.'
+          'Data comes from local DSH session logs. Total includes cache reads; Token usage does not equal actual cost.'
       }
     };
 
@@ -318,7 +317,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         setTip(null);
         setHighlight(null);
         setEntering(false);
-        setSelectedDay(key);
+        setSelectedDay((previous) => (previous === key ? null : key));
       };
 
       // 语言变化时重渲染：locale 快照每次变化都会通知（切语言或补注册字典）。

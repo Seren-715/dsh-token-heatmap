@@ -123,6 +123,18 @@ assert.equal(states[2], 'totalTokens');
 assert.equal(states[3], 'day');
 assert.equal(nodes.find((n) => n.props.className === 'dth-weeks').props['data-enter'], 'false');
 
+nodes.find((n) => n.props['data-day'] === '2026-10-12').props.onClick();
+tree = draw();
+nodes = all(tree);
+assert(!nodes.some((n) => n.type === 'section'), 'clicking the selected date closes details');
+assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-12').props['aria-pressed'], false);
+nodes.find((n) => n.props['data-day'] === '2026-10-12').props.onClick();
+nodes = all(draw());
+assert(
+  nodes.some((n) => n.type === 'section'),
+  'clicking again reopens details'
+);
+
 nodes.find((n) => n.type === 'button' && n.children.includes('rangeYear')).props.onClick();
 tree = draw();
 nodes = all(tree);

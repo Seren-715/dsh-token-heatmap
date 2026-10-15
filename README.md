@@ -20,7 +20,7 @@ Hover a date cell to display three lines: the date (YYYY-MM-DD), the selected me
 
 ### Inline daily details and Token composition
 
-Click a date to show its details below the heatmap without leaving the page. Selecting another day updates the same region while filters remain available.
+Click a date to show its details below the heatmap without leaving the page. Click the selected date again to collapse its details, or select another day to update the same region. Filters remain available.
 
 Details include the total, input, output, cache reads and calls, plus cache writes when present. The grayscale bar shows each component's share by Token count. The October 13, 2026 example shows 117,405,946 Token, with cache reads accounting for 99.09%. These are screenshot examples; your statistics come from your local logs.
 

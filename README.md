@@ -10,15 +10,29 @@ All data comes from DSH's own local session logs — **no network requests, no s
 
 ## Screenshots
 
-These screenshots show the previous version for installation and localization reference. The current version defaults to six months, splits the year into two rows, and adds inline daily details.
+### Half-year heatmap and compact tooltip
 
-Settings → **Token usage** (previous English UI):
+Open Settings → **Token usage**. The default range is six months. Choose total, input+output, cache read or output, and switch between daily and weekly views. The range selector offers six months or a full year; the year is split into two rows.
 
-![English interface](docs/screenshot-en.png)
+Hover a cell to see only the selected metric's Token count and a click hint. The outline indicates hover or selection; today's cell has no default highlight.
 
-The same section with the UI switched to Chinese — every label, month tick and number unit follows the language:
+![English half-year heatmap and tooltip](docs/heatmap-en.png)
 
-![Chinese interface](docs/screenshot-zh.png)
+### Inline daily details and Token composition
+
+Click a date to show its details below the heatmap without leaving the page. Selecting another day updates the same region while filters remain available.
+
+Details include the total, input, output, cache reads and calls, plus cache writes when present. The grayscale bar shows each component's share by Token count. The October 13, 2026 example shows 117,405,946 Token, with cache reads accounting for 99.09%. These are screenshot examples; your statistics come from your local logs.
+
+![English daily details and Token composition](docs/detail-en.png)
+
+### Chinese interface
+
+Labels, months, dates and number units follow the host language. The same daily total appears as “1.17 亿” in Chinese and “117.41M” in English.
+
+![Chinese half-year heatmap and tooltip](docs/heatmap-zh.png)
+
+![Chinese daily details and Token composition](docs/detail-zh.png)
 
 ## Features
 

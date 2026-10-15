@@ -21,6 +21,13 @@ All data is derived from DSH's own local session logs. **No external network req
 
 ## Screenshots
 
+> **Note on screenshot currency.** The images below predate **v0.4.1** and have not been re-captured since. Two UI changes introduced in v0.4.1 are therefore not visible in them:
+>
+> 1. **Empty-day cells render darker.** Previously, a day without recorded usage was drawn at a mid-level grey, close to the lowest usage level; such cells now occupy the dimmest level, reserving the brightness range for days with usage.
+> 2. **Collapsing a day retains its selection.** Selecting the same date again collapses only the detail body; the selection outline remains on the heatmap and the collapsed row carries an expand control.
+>
+> The textual descriptions throughout this document reflect the current behaviour.
+
 ### Half-year heatmap and compact tooltip
 
 Open Settings → **Token usage**. The default range is six months. Choose total, input+output, cache read or output, and switch between daily and weekly views. The range selector offers six months or a full year; the year is split into two rows.

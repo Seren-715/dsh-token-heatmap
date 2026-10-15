@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.3 — 2026-10-15
+
+- 文档：两份 README 的「界面示例」章节新增**截图时效说明**，指明现有截图拍摄于 v0.4.1 之前，并逐条列出 v0.4.1 引入、
+  因而在图中无法体现的两处界面变更（空态格子更暗、收起详情后保留选中状态）。
+- 本次不重新拍摄截图；正文描述均为当前行为。
+- 无代码变更。
+
+Documentation only: the "Screenshots" section of both README files now records that the images predate
+v0.4.1 and lists the two UI changes introduced in that version which the images therefore cannot show
+(darker empty-day cells; collapsing a day retains its selection). No screenshots are re-captured.
+
 ## 0.4.2 — 2026-10-15
 
 - 文档：README 中英文版新增「设计要点」章节，以设计决策的形式说明与同类实现的差异。

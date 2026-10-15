@@ -10,7 +10,9 @@ All data comes from DSH's own local session logs — **no network requests, no s
 
 ## Screenshots
 
-Settings → **Token usage**, on a daily view (English UI):
+These screenshots show the previous version for installation and localization reference. The current version defaults to six months, splits the year into two rows, and adds inline daily details.
+
+Settings → **Token usage** (previous English UI):
 
 ![English interface](docs/screenshot-en.png)
 
@@ -20,15 +22,17 @@ The same section with the UI switched to Chinese — every label, month tick and
 
 ## Features
 
-- **Daily / Weekly** toggle: one cell per day, or one cell per week (a whole column shares one colour)
-- **Four token metrics**: total / input+output / cache read / output
-- **One year, 53 columns × 7 rows**, aligned to natural weeks (Sunday→Saturday); cells after today stay empty
-- Cell size **adapts to the container width** (7–13px) so the chart always fits — no clipping, no scrollbar
-- Hover a cell for that day's or week's breakdown (total, input, output, cache read, call count)
-- Summary line: today / this week / all time
-- Refreshes every minute, and immediately when the window regains focus or visibility
-- Follows the host theme (light/dark); styling uses only `--dsw-alias-*` tokens
-- **Fully localized**: all visible text goes through the client locale service, so switching the UI language switches this section too (number units follow as well: 万/亿 vs K/M/B)
+- Default half-year range (26 weeks); full year uses two rows (27 + 26 weeks), each with month labels
+- Cells capped at 20px with 4px gaps, sized to the container to avoid horizontal scrollbars
+- **Daily / Weekly** views: daily levels or one shared level per natural week; Sunday–Saturday, future dates empty
+- **Four metrics**: total / input+output / cache read / output, rendered in theme-aware grayscale
+- Hover or focus shows only the selected metric's Token count and a click hint; weekly counts are labeled
+- Click a date for inline daily details below the heatmap: total, input, output, cache reads, calls, and nonzero cache writes; weekly cells open their actual day
+- Proportional Token composition bar with percentages and an empty state
+- Approximately 600ms diagonal entrance without delaying the summary; filters and date selection do not replay it
+- Native buttons support Enter/Space and focus feedback; respects system reduced-motion preferences
+- Today / this week / all-time summary; minute refresh plus refresh on visibility or focus
+- Chinese/English labels, month names and number units; follows the host light/dark theme
 
 ## Data source
 
@@ -52,7 +56,7 @@ The host side caches per file keyed on `size + mtime`, so a warm pass takes abou
 
 ### About the metrics
 
-In DeepSeek's accounting, **cache reads are usually over 95% of `totalTokens`**, so the "total" metric mostly reflects cache hits. To see what you actually spent, pick **"input+output"**.
+Total includes cache reads reported in the logs; their share depends on usage. Input+output counts only those two fields. Token counts are not billed currency amounts; this plugin does not calculate costs.
 
 Colour buckets use **quantiles** (the 25/50/75/95th percentile of your own data) rather than absolute thresholds, so the chart stays readable even though the four metrics differ by orders of magnitude.
 
@@ -87,11 +91,15 @@ Optional, set in the bundle row's `config`. Defaults apply when omitted.
 | `cordis.patch.yml` | Mount declaration; the `insert` `name` must match the package name exactly |
 | `tools/test-plugin.mjs` | Runs the host-side aggregation over real session logs |
 | `tools/test-apply.mjs` | Runs `apply()` against a stub Cordis context to check route registration |
+| `tools/test-client.mjs` | Client rendering and interaction checks using React hook stubs |
 | `tools/test-weekly.mjs` | Verifies weekly aggregation: week boundaries, month ticks, no double counting |
 
-Self-tests (require existing DSH session logs on the machine):
+Use a Node.js version supporting `node:zlib` / `zstdDecompressSync` (Node.js 24 recommended). Client and weekly tests need no session logs. Host aggregation tests use local logs; set `DSH_SESSIONS_ROOT` to override the path.
+
+Self-tests:
 
 ```bash
+node tools/test-client.mjs
 node tools/test-plugin.mjs
 node tools/test-apply.mjs
 node tools/test-weekly.mjs
@@ -101,11 +109,15 @@ node tools/test-weekly.mjs
 
 **The UI goes through a slot, it does not inject DOM.** The component registers into `settings.section` and only renders React elements. It imports no Harness client package and writes its own styles using theme tokens only. (The DSH plugin guide explicitly forbids appending to `document.body` or replacing the app root.)
 
-**Adaptive sizing.** A `ResizeObserver` measures the container and computes each cell's edge length into the CSS variable `--dth-cell`. One year of 53 columns yields 9–13px cells between 640px and 900px of available width, always fitting exactly.
+**Adaptive sizing.** A `ResizeObserver` measures the container and computes each cell's edge length into the CSS variable `--dth-cell`. Sizing fits 26 columns for the half year and at most 27 columns per row for the year, capped at 20px and accounting for gaps and padding.
 
-**Week alignment.** The range starts on the Sunday of the current week, so every column is a complete natural week, and cells after today stay empty. The month tick is placed on the column that contains the 1st of that month, so it always lines up with the grid.
+**Week alignment.** The range starts 25 or 52 weeks before the Sunday of the current week, so every column is a complete natural week, and cells after today stay empty. The month tick is placed on the column that contains the 1st of that month, so it always lines up with the grid.
 
 **Localization.** Visible text is never hardcoded. The plugin registers its own dictionary namespace with `ctx.locale.register(ns, { zh, en })` and reads it through the framework's injected `t` seat, so a language switch re-renders the section. Number units are localized too (`万/亿` in Chinese, `K/M/B` in English).
+
+Client checks execute `client.js` with React hook stubs, covering the first visible render, compact tooltips, inline details, range switching and composition. They do not replace layout, animation, focus or theme verification in DSH.
+
+See [CHANGELOG.md](CHANGELOG.md) for changes.
 
 ## License
 

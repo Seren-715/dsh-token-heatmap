@@ -20,9 +20,8 @@ window.__ModuleLoader__.load({
 
     const LOCALE_NS = 'settings.token-heatmap';
     const DATA_URLS = ['/dsh-token-heatmap/data', 'dsh-token-heatmap/data'];
-    // 固定近一年：366 天需要 53 列（53×7 = 371 ≥ 366），正好覆盖一整年。
-    const DAYS = 366;
-    const WEEKS = Math.ceil(DAYS / 7);
+    const YEAR_WEEKS = 53;
+    const HALF_YEAR_WEEKS = 26;
     const WEEKDAYS = {
       zh: ['日', '一', '二', '三', '四', '五', '六'],
       en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -32,6 +31,7 @@ window.__ModuleLoader__.load({
     const DICTIONARIES = {
       zh: {
         navLabel: 'Token 用量',
+        detailTitle: '当日 Token 使用详情', detailTotal: '当日总量', includesCache: 'Token · 含缓存读取', composition: '用量构成 · 按 Token 数量', other: '其他', tipCacheWrite: '缓存写入', openDay: '查看 {day} 当天详情', tipClick: '点击查看详情', tipWeekAmount: '本周',
         metricTotal: '总量',
         metricIo: '输入+输出',
         metricCacheRead: '缓存读',
@@ -43,8 +43,9 @@ window.__ModuleLoader__.load({
         summaryTotal: '合计',
         loading: '统计中…',
         loadFailed: '加载失败：{message}',
-        rangeHintDay: '近一年 · 一格一天（一列 7 天）',
-        rangeHintWeek: '近一年 · 一格一周（整列同色）',
+        rangeHalf: '近半年', rangeYear: '近一年', rangeLabel: '时间范围',
+        rangeHintDay: '一格一天（一列 7 天）',
+        rangeHintWeek: '一格一周（整列同色）',
         noRecord: '无用量记录',
         tipTotal: '总量',
         tipInput: '输入',
@@ -59,6 +60,7 @@ window.__ModuleLoader__.load({
       },
       en: {
         navLabel: 'Token usage',
+        detailTitle: 'Daily token usage', detailTotal: 'Daily total', includesCache: 'Token · includes cache reads', composition: 'Usage composition · by token count', other: 'Other', tipCacheWrite: 'Cache write', openDay: 'View details for {day}', tipClick: 'Click to view details', tipWeekAmount: 'This week',
         metricTotal: 'Total',
         metricIo: 'Input+output',
         metricCacheRead: 'Cache read',
@@ -70,8 +72,9 @@ window.__ModuleLoader__.load({
         summaryTotal: 'All time',
         loading: 'Loading…',
         loadFailed: 'Failed to load: {message}',
-        rangeHintDay: 'Last year · one cell per day (7 rows)',
-        rangeHintWeek: 'Last year · one cell per week (whole column)',
+        rangeHalf: 'Last 6 months', rangeYear: 'Last year', rangeLabel: 'Time range',
+        rangeHintDay: 'One cell per day (7 rows)',
+        rangeHintWeek: 'One cell per week (whole column)',
         noRecord: 'No usage recorded',
         tipTotal: 'Total',
         tipInput: 'Input',
@@ -117,25 +120,25 @@ window.__ModuleLoader__.load({
 .dth-summary { color: var(--dsw-alias-label-secondary, #61666b); }
 .dth-summary b { color: var(--dsw-alias-label-primary, inherit); font-weight: 500; }
 .dth-line { display: flex; align-items: baseline; }
-.dth-scroll { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; min-width: 0; }
+.dth-scroll { display: flex; flex-direction: column; gap: 18px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; min-width: 0; }
 /* 用 flex 列而不是 grid-auto-flow: column —— grid 在 overflow 容器里没有固有宽度，
    会被压缩；flex 列的固有宽度是确定的。 */
-.dth-weeks { display: flex; gap: 3px; width: max-content; }
-.dth-week { display: flex; flex-direction: column; gap: 3px; }
-/* 格子尺寸由容器宽度算出，写在 --dth-cell 上；一年 53 列永远刚好放下，不会裁掉右边。 */
-.dth-cell { width: var(--dth-cell, 13px); height: var(--dth-cell, 13px); border-radius: 3px; background: var(--dsw-alias-bg-sunken, rgba(127,127,127,.16)); }
-.dth-cell[data-level='1'] { background: color-mix(in srgb, var(--dsw-alias-brand-primary, #247bbf) 26%, transparent); }
-.dth-cell[data-level='2'] { background: color-mix(in srgb, var(--dsw-alias-brand-primary, #247bbf) 48%, transparent); }
-.dth-cell[data-level='3'] { background: color-mix(in srgb, var(--dsw-alias-brand-primary, #247bbf) 72%, transparent); }
-.dth-cell[data-level='4'] { background: var(--dsw-alias-brand-primary, #247bbf); }
+.dth-weeks { display: flex; gap: 4px; width: max-content; }
+.dth-week { display: flex; flex-direction: column; gap: 4px; }
+/* Fit the range without horizontal scrolling; cap cells at 20px. */
+.dth-cell { width: var(--dth-cell, 20px); height: var(--dth-cell, 20px); border-radius: 3px; background: var(--dsw-alias-bg-sunken, rgba(127,127,127,.16)); }
+.dth-cell[data-level='1'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 26%, transparent); }
+.dth-cell[data-level='2'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 48%, transparent); }
+.dth-cell[data-level='3'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 72%, transparent); }
+.dth-cell[data-level='4'] { background: var(--dsw-alias-label-primary, #555); }
 .dth-cell[data-today='true'] { outline: 1px solid var(--dsw-alias-label-primary, currentColor); outline-offset: 1px; }
 .dth-legend { display: flex; align-items: center; gap: 4px; }
-.dth-legend i.dth-cell { display: block; }
+.dth-legend i.dth-cell { display: block; width: 10px; height: 10px; }
 /* 月份刻度与上面每一列一一对应：同宽同序，标签不参与排版偏移。 */
-.dth-months { display: flex; gap: 3px; margin-top: 5px; width: max-content; color: var(--dsw-alias-label-tertiary, #81858c); font-size: 11px; }
-.dth-month { width: var(--dth-cell, 13px); height: 14px; flex: none; position: relative; }
+.dth-months { display: flex; gap: 4px; margin-top: 5px; width: max-content; color: var(--dsw-alias-label-tertiary, #81858c); font-size: 11px; }
+.dth-month { width: var(--dth-cell, 20px); height: 14px; flex: none; position: relative; }
 .dth-month span { position: absolute; left: 0; top: 0; white-space: nowrap; }
-.dth-foot { display: flex; align-items: center; gap: 10px; color: var(--dsw-alias-label-secondary, #61666b); font-size: 12px; }
+.dth-foot { flex-wrap: wrap; display: flex; align-items: center; gap: 10px; color: var(--dsw-alias-label-secondary, #61666b); font-size: 12px; }
 .dth-note { color: var(--dsw-alias-label-tertiary, #81858c); font-size: 12px; line-height: 20px; margin: 0; }
 .dth-error { color: #d9534f; }
 .dth-tip {
@@ -144,6 +147,38 @@ window.__ModuleLoader__.load({
   pointer-events: none; opacity: 0; transition: opacity 120ms ease-out; white-space: pre;
 }
 .dth-tip[data-show='true'] { opacity: 1; }
+.dth-root { font-variant-numeric: tabular-nums; }
+.dth-overview { display: flex; flex-direction: column; gap: 14px; }
+button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: relative; transition: opacity 150ms ease-out, transform 120ms ease-out, background-color 150ms ease-out; }
+.dth-weeks[data-ready='false'] { visibility: hidden; }
+.dth-weeks[data-enter='true'] button.dth-cell { animation: dth-reveal 180ms ease-out both; animation-delay: var(--dth-delay); }
+@keyframes dth-reveal { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
+.dth-weeks[data-engaged='true'] button.dth-cell { opacity: .8; transition-duration: 120ms; }
+.dth-weeks button.dth-cell[data-highlight='true'] { opacity: 1; transform: scale(1.06); outline: 1px solid var(--dsw-alias-label-primary, #555); outline-offset: 1px; z-index: 1; }
+.dth-weeks button.dth-cell:active { transform: scale(.94); }
+.dth-root button:focus-visible { outline: 2px solid var(--dsw-alias-label-primary, #555); outline-offset: 2px; }
+.dth-weeks button.dth-cell[data-selected='true'] { outline: 1px solid var(--dsw-alias-label-primary, #555); outline-offset: 1px; }
+.dth-detail { padding-top: 16px; display: flex; flex-direction: column; gap: 20px; }
+.dth-detail h3, .dth-detail p { margin: 0; }
+.dth-detail h3 { font-size: 18px; font-weight: 500; }
+.dth-total { font-size: 32px; font-weight: 500; color: var(--dsw-alias-label-primary, #555); }
+.dth-stats { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 0; }
+.dth-stats dt { color: var(--dsw-alias-label-secondary, #61666b); margin-bottom: 6px; }
+.dth-stats dd { margin: 0; font-size: 20px; }
+.dth-composition { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 10px; font-size: 12px; color: var(--dsw-alias-label-secondary, #61666b); }
+.dth-bar { display: flex; height: 12px; width: 100%; overflow: hidden; border-radius: 4px; background: var(--dsw-alias-bg-sunken, rgba(127,127,127,.16)); margin-top: 10px; }
+.dth-bar-segment { height: 100%; flex: none; }
+.dth-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+.dth-part[data-part='inputTokens'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 90%, transparent); }
+.dth-part[data-part='outputTokens'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 65%, transparent); }
+.dth-part[data-part='cacheReadTokens'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 35%, transparent); }
+.dth-part[data-part='cacheWriteTokens'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 50%, transparent); }
+.dth-part[data-part='other'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 20%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .dth-root button.dth-cell, .dth-tip { animation: none !important; transition: none !important; }
+  .dth-weeks button.dth-cell[data-highlight='true'], .dth-weeks button.dth-cell:active { transform: none; }
+}
+
 `;
 
     const valueOf = (day, metric) => {
@@ -224,11 +259,39 @@ window.__ModuleLoader__.load({
       const [failure, setFailure] = React.useState(null);
       const [metric, setMetric] = React.useState('totalTokens');
       const [mode, setMode] = React.useState('day');
-      const [cell, setCell] = React.useState(13);
+      const [cell, setCell] = React.useState(20);
       const [tip, setTip] = React.useState(null);
+      const [selectedDay, setSelectedDay] = React.useState(null);
+      const [highlight, setHighlight] = React.useState(null);
+      // Arm before the first data render so visible cells never paint before the reveal.
+      const [entering, setEntering] = React.useState(true);
+      const enteredRef = React.useRef(false);
       const [language, setLanguage] = React.useState(() => props?.language ?? 'en');
+      const [range, setRange] = React.useState('half');
+      const weeks = range === 'half' ? HALF_YEAR_WEEKS : YEAR_WEEKS;
+      const columnsPerRow = range === 'half' ? HALF_YEAR_WEEKS : Math.ceil(YEAR_WEEKS / 2);
       const frameRef = React.useRef(null);
       const t = makeTranslate(props, props?.tBound);
+
+      // CSS owns the stagger; one cancellable timer only marks its completion.
+      React.useEffect(() => {
+        if (payload === null || enteredRef.current) return;
+        enteredRef.current = true;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          setEntering(false);
+          return;
+        }
+        const timer = window.setTimeout(() => setEntering(false), 600);
+        return () => window.clearTimeout(timer);
+      }, [payload !== null]);
+
+      // Keep focus and scroll on the heatmap while updating inline details.
+      const openDay = (key) => {
+        setTip(null);
+        setHighlight(null);
+        setEntering(false);
+        setSelectedDay(key);
+      };
 
       // 语言变化时重渲染：locale 快照每次变化都会通知（切语言或补注册字典）。
       React.useEffect(() => {
@@ -289,22 +352,21 @@ window.__ModuleLoader__.load({
         };
       }, []);
 
-      // 按容器宽度算格子尺寸：一年 53 列，算出来正好铺满，不裁右边、不留滚动条。
-      // 上限 13px（不放大到失真），下限 7px（再窄就交给横向滚动，而不是把格子压没）。
-      React.useEffect(() => {
+      // Fit the complete range inside the container, including scroll-frame padding.
+      React.useLayoutEffect(() => {
         const element = frameRef.current;
         if (element === null) return;
         const compute = () => {
           const available = element.clientWidth;
-          const width = Math.floor((available - (WEEKS - 1) * 3) / WEEKS);
-          setCell(Math.max(7, Math.min(13, width)));
+          const width = Math.floor((available - 4 - (columnsPerRow - 1) * 4) / columnsPerRow);
+          setCell(Math.max(1, Math.min(20, width)));
         };
         compute();
         if (typeof ResizeObserver !== 'function') return;
         const observer = new ResizeObserver(compute);
         observer.observe(element);
         return () => observer.disconnect();
-      }, []);
+      }, [columnsPerRow]);
 
       // "今天"每帧重算：跨过零点后，下一次渲染就会把描边挪到新的一天。
       const today = new Date();
@@ -318,8 +380,7 @@ window.__ModuleLoader__.load({
       // 近一年：起点取"今天所在周的周日"，保证每一列都是完整自然周，
       // 末尾多出来的几天（今天之后）留空。
       const start = new Date(today);
-      start.setDate(start.getDate() - (DAYS - 1));
-      start.setDate(start.getDate() - start.getDay());
+      start.setDate(start.getDate() - start.getDay() - (weeks - 1) * 7);
       // 保留原日期对象，避免日期加减被隐式字符串化。
       const at = (offset) => {
         const date = new Date(start);
@@ -329,7 +390,7 @@ window.__ModuleLoader__.load({
 
       // 每周口径：把自然周（周日→周六）内的每一天加起来。当天之后的格子不计入。
       const weekTotals = [];
-      for (let offset = 0; offset < WEEKS * 7; offset += 1) {
+      for (let offset = 0; offset < weeks * 7; offset += 1) {
         const date = at(offset);
         if (date.getTime() > today.getTime()) continue;
         const bucket = (weekTotals[Math.floor(offset / 7)] ??= {
@@ -357,12 +418,12 @@ window.__ModuleLoader__.load({
       const buildColumns = (cellsFor) => {
         const columns = [];
         const labels = [];
-        for (let week = 0; week < WEEKS; week += 1) {
+        for (let week = 0; week < weeks; week += 1) {
           const columnCells = [];
           let label = '';
           for (let weekday = 0; weekday < 7; weekday += 1) {
             const date = at(week * 7 + weekday);
-            if (label === '' && date.getDate() === 1) label = monthLabel(date.getMonth(), language);
+            if (label === '' && (date.getDate() === 1 || (week % columnsPerRow === 0 && weekday === 0))) label = monthLabel(date.getMonth(), language);
             if (date.getTime() > today.getTime()) {
               columnCells.push(h('div', { key: `x${week}-${weekday}`, className: 'dth-cell', style: { visibility: 'hidden' } }));
               continue;
@@ -375,54 +436,64 @@ window.__ModuleLoader__.load({
         return { columns, labels };
       };
 
-      const hoverHandlers = (text) => ({
-        onMouseEnter: (event) => setTip({ text, x: event.clientX, y: event.clientY }),
-        onMouseLeave: () => setTip(null)
+      const hoverHandlers = (text, key, week, weekday) => ({
+        type: 'button',
+        'aria-label': `${text}. ${t('openDay', { day: key })}`,
+        'data-day': key,
+        'data-highlight': String(highlight === key),
+        'data-selected': String(selectedDay === key),
+        'aria-pressed': selectedDay === key,
+        'aria-controls': 'dth-day-detail',
+        style: { '--dth-delay': `${Math.round((week + weekday) / (weeks + 5) * 420)}ms` },
+        onMouseEnter: (event) => { setHighlight(key); setTip({ text, x: event.clientX, y: event.clientY }); },
+        onMouseLeave: () => { setHighlight(null); setTip(null); },
+        onFocus: (event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setHighlight(key); setTip({ text, x: rect.left, y: rect.top });
+        },
+        onBlur: () => { setHighlight(null); setTip(null); },
+        onKeyDown: (event) => { if (event.key === 'Escape') { setTip(null); setHighlight(null); } },
+        onClick: () => openDay(key)
       });
-
-      const breakdown = (record) => [
-        `${t('tipTotal')} ${formatFull(record.totalTokens)}`,
-        `${t('tipInput')} ${formatFull(record.inputTokens)}   ${t('tipOutput')} ${formatFull(record.outputTokens)}`,
-        `${t('tipCacheRead')} ${formatFull(record.cacheReadTokens)}   ${t('tipCalls')} ${record.calls}`
-      ].join('\n');
 
       // 每天视图：一格一天，四档分位色阶。
       const dayCuts = buildCuts(dayValues);
-      const dayView = buildColumns(({ date, key }) => {
+      const dayView = buildColumns(({ week, weekday, date, key }) => {
         const record = byDay.get(key);
-        const head = `${key} ${weekdayNames[date.getDay()]}`;
-        return h('div', {
+        return h('button', {
           key,
           className: 'dth-cell',
           'data-level': String(levelOf(valueOf(record, metric), dayCuts)),
           ...(key === todayKey ? { 'data-today': 'true' } : {}),
-          ...hoverHandlers(record === undefined ? `${head}\n${t('noRecord')}` : `${head}\n${breakdown(record)}`)
+          ...hoverHandlers(`${t(METRIC_KEYS[metric])} ${formatFull(valueOf(record, metric))} Token\n${t('tipClick')}`, key, week, weekday)
         });
       });
 
       // 每周视图：整列 7 格同色、同 tooltip；格子与每天视图同尺寸，形状一致。
       const weekCuts = buildCuts(weekValues.filter((value) => value > 0));
-      const weekView = buildColumns(({ week, date, key }) => {
+      const weekView = buildColumns(({ week, weekday, date, key }) => {
         const bucket = weekTotals[week];
         const value = bucket === undefined ? 0 : valueOf(bucket, metric);
-        const range = bucket === undefined
-          ? t('tipWeekIf', { start: key })
-          : t(bucket.done ? 'tipWeekIf' : 'tipWeek', { start: dayKey(bucket.weekStart) });
-        const text = bucket === undefined
-          ? `${range}\n${t('noRecord')}`
-          : `${range}\n${t('tipTotal')} ${formatFull(value)}\n${breakdown(bucket)}`;
-        return h('div', {
+        const text = `${t('tipWeekAmount')} · ${t(METRIC_KEYS[metric])} ${formatFull(value)} Token\n${t('tipClick')}`;
+        return h('button', {
           key: `k${week}-${date.getDay()}`,
           className: 'dth-cell',
           'data-level': String(levelOf(value, weekCuts)),
           ...(date.getTime() === today.getTime() ? { 'data-today': 'true' } : {}),
-          ...hoverHandlers(text)
+          ...hoverHandlers(text, key, week, weekday)
         });
       });
 
       const activeView = mode === 'day' ? dayView : weekView;
+      const heatmapRows = [];
+      for (let offset = 0; offset < weeks; offset += columnsPerRow) {
+        heatmapRows.push(h('div', { key: `row-${offset}`, className: 'dth-heatmap-row' },
+          h('div', { className: 'dth-weeks', 'data-ready': String(payload !== null), 'data-enter': String(payload !== null && entering), 'data-engaged': String(highlight !== null) }, activeView.columns.slice(offset, offset + columnsPerRow)),
+          h('div', { className: 'dth-months' }, activeView.labels.slice(offset, offset + columnsPerRow))
+        ));
+      }
 
-      const currentWeek = weekTotals[Math.floor((today.getTime() - start.getTime()) / 86400000 / 7)];
+      const currentWeek = weekTotals[weeks - 1];
       const summary = failure !== null
         ? h('span', { className: 'dth-error' }, t('loadFailed', { message: failure }))
         : payload === null
@@ -436,13 +507,50 @@ window.__ModuleLoader__.load({
             h('b', null, formatTokens(payload.totalTokens ?? 0, language))
           );
 
+      const renderDetail = () => {
+        const record = byDay.get(selectedDay) ?? {};
+        const total = record.totalTokens || 0;
+        const parts = [
+          ['tipInput', 'inputTokens'], ['tipOutput', 'outputTokens'],
+          ['tipCacheRead', 'cacheReadTokens'], ['tipCacheWrite', 'cacheWriteTokens']
+        ].map(([label, field]) => ({ label: t(label), field, value: Math.max(0, record[field] || 0) }));
+        const componentTotal = parts.reduce((sum, part) => sum + part.value, 0);
+        if (total > componentTotal) parts.push({ label: t('other'), field: 'other', value: total - componentTotal });
+        const compositionTotal = Math.max(total, componentTotal);
+        const visibleParts = parts.filter(part => part.value > 0);
+        const percentOf = part => part.value / compositionTotal * 100;
+        const partLabel = part => `${part.label} ${percentOf(part).toFixed(2)}%`;
+        const date = new Date(`${selectedDay}T12:00:00`);
+        const title = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return h('section', { id: 'dth-day-detail', className: 'dth-detail', 'aria-label': t('detailTitle'), 'aria-live': 'polite', 'aria-atomic': 'true' },
+          h('div', null, h('h3', null, title), h('p', { className: 'dth-note' }, t('detailTitle'))),
+          h('div', null, h('p', { className: 'dth-note' }, t('detailTotal')), h('div', { className: 'dth-total' }, formatTokens(total, language)), h('p', { className: 'dth-note' }, `${formatFull(total)} ${t('includesCache')}`)),
+          byDay.has(selectedDay) ? null : h('p', { className: 'dth-note' }, t('noRecord')),
+          h('dl', { className: 'dth-stats' }, [
+            ['tipInput', 'inputTokens'], ['tipOutput', 'outputTokens'], ['tipCacheRead', 'cacheReadTokens'],
+            ...(record.cacheWriteTokens > 0 ? [['tipCacheWrite', 'cacheWriteTokens']] : []), ['tipCalls', 'calls']
+          ].map(([label, field]) => h('div', { key: field }, h('dt', null, t(label)), h('dd', null, formatFull(record[field] || 0))))) ,
+          h('div', null,
+            h('p', { className: 'dth-note' }, t('composition')),
+            h('div', { className: 'dth-bar', role: 'img', 'aria-label': compositionTotal > 0 ? visibleParts.map(partLabel).join(', ') : t('noRecord') },
+              visibleParts.map(part => h('span', { key: part.field, className: 'dth-bar-segment dth-part', 'data-part': part.field, 'aria-hidden': 'true', style: { width: `${percentOf(part)}%` } }))
+            ),
+            compositionTotal <= 0 ? h('p', { className: 'dth-note' }, t('noRecord')) : h('div', { className: 'dth-composition' },
+              visibleParts.map(part => h('span', { key: part.field }, h('i', { className: 'dth-swatch dth-part', 'data-part': part.field, 'aria-hidden': 'true' }), partLabel(part)))
+            )
+          )
+        );
+      };
+
       return h('div', { className: 'dth-root', ref: frameRef, style: { '--dth-cell': `${cell}px` } },
+        h('div', { className: 'dth-overview' },
         h('div', { className: 'dth-head' },
           h('div', { className: 'dth-seg' },
             METRICS.map((key) => h('button', {
               key,
               type: 'button',
               'data-active': String(key === metric),
+              'aria-pressed': key === metric,
               onClick: () => setMetric(key)
             }, t(METRIC_KEYS[key])))
           ),
@@ -451,18 +559,20 @@ window.__ModuleLoader__.load({
               key: entry.key,
               type: 'button',
               'data-active': String(entry.key === mode),
+              'aria-pressed': entry.key === mode,
               onClick: () => setMode(entry.key)
             }, t(entry.labelKey)))
           )
         ),
         h('div', { className: 'dth-line' }, h('span', { className: 'dth-summary' }, summary)),
-        h('div', { className: 'dth-scroll' },
-          h('div', null,
-            h('div', { className: 'dth-weeks' }, activeView.columns),
-            h('div', { className: 'dth-months' }, activeView.labels)
-          )
-        ),
+        h('div', { className: 'dth-scroll' }, heatmapRows),
         h('div', { className: 'dth-foot' },
+          h('div', { className: 'dth-seg', role: 'group', 'aria-label': t('rangeLabel') },
+            ['half', 'year'].map((key) => h('button', {
+              key, type: 'button', 'data-active': String(range === key), 'aria-pressed': range === key,
+              onClick: () => { setRange(key); setEntering(false); setTip(null); setHighlight(null); }
+            }, t(key === 'half' ? 'rangeHalf' : 'rangeYear')))
+          ),
           h('span', null, t(mode === 'day' ? 'rangeHintDay' : 'rangeHintWeek')),
           h('span', { className: 'dth-legend' },
             t('legendLess'),
@@ -470,7 +580,8 @@ window.__ModuleLoader__.load({
             t('legendMore')
           )
         ),
-        h('p', { className: 'dth-note' }, t('footnote')),
+        h('p', { className: 'dth-note' }, t('footnote'))),
+        selectedDay === null ? null : renderDetail(),
         tip === null ? null : h('div', {
           className: 'dth-tip',
           'data-show': 'true',

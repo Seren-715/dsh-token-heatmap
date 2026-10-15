@@ -58,7 +58,10 @@ window.__ModuleLoader__.load({
         tipCalls: '调用',
         legendLess: '少',
         legendMore: '多',
-        footnote: '数据来自本地 DSH 会话日志。总量包含缓存读取，Token 用量不等于实际费用。'
+        selectDate: '点击格子查看当日详情',
+        collapseDetail: '收起详情',
+        expandDetail: '展开详情',
+        footnote: '数据来自本地 DSH 会话日志；总量含缓存读取，不代表实际费用。'
       },
       en: {
         navLabel: 'Token usage',
@@ -94,8 +97,11 @@ window.__ModuleLoader__.load({
         tipCalls: 'Calls',
         legendLess: 'Less',
         legendMore: 'More',
+        selectDate: 'Select a date to view details',
+        collapseDetail: 'Hide details',
+        expandDetail: 'Show details',
         footnote:
-          'Data comes from local DSH session logs. Total includes cache reads; Token usage does not equal actual cost.'
+          'From local DSH session logs; totals include cache reads and do not represent actual cost.'
       }
     };
 
@@ -136,7 +142,10 @@ window.__ModuleLoader__.load({
 .dth-weeks { display: flex; gap: 4px; width: max-content; }
 .dth-week { display: flex; flex-direction: column; gap: 4px; }
 /* Fit the range without horizontal scrolling; cap cells at 20px. */
-.dth-cell { width: var(--dth-cell, 20px); height: var(--dth-cell, 20px); border-radius: 3px; background: var(--dsw-alias-bg-sunken, rgba(127,127,127,.16)); }
+/* 无记录 = 最暗的一档；有记录的格子独占亮度范围（8% 垫底、26→100% 递增）。
+   不要用 --dsw-alias-bg-sunken：这个变量在 DSH 主题里不存在，只会落到兜底值，
+   而兜底值恰好夹在 level 1 和 level 2 之间，会让空态看起来像"中等用量"。 */
+.dth-cell { width: var(--dth-cell, 20px); height: var(--dth-cell, 20px); border-radius: 3px; background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 8%, transparent); }
 .dth-cell[data-level='1'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 26%, transparent); }
 .dth-cell[data-level='2'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 48%, transparent); }
 .dth-cell[data-level='3'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 72%, transparent); }
@@ -148,7 +157,8 @@ window.__ModuleLoader__.load({
 .dth-month { width: var(--dth-cell, 20px); height: 14px; flex: none; position: relative; }
 .dth-month span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 .dth-foot { flex-wrap: wrap; display: flex; align-items: center; gap: 10px; color: var(--dsw-alias-label-secondary, #61666b); font-size: 12px; }
-.dth-note { color: var(--dsw-alias-label-tertiary, #81858c); font-size: 12px; line-height: 20px; margin: 0; }
+/* 说明文字用 label-secondary：原来的 tertiary 在深色底上对比度偏低。 */
+.dth-note { color: var(--dsw-alias-label-secondary, #61666b); font-size: 12px; line-height: 20px; margin: 0; }
 .dth-error { color: #d9534f; }
 .dth-tip {
   position: fixed; z-index: 2147483001; padding: 7px 10px; border-radius: 8px;
@@ -168,6 +178,16 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
 .dth-root button:focus-visible { outline: 2px solid var(--dsw-alias-label-primary, #555); outline-offset: 2px; }
 .dth-weeks button.dth-cell[data-selected='true'] { outline: 1px solid var(--dsw-alias-label-primary, #555); outline-offset: 1px; }
 .dth-detail { padding-top: 16px; display: flex; flex-direction: column; gap: 20px; }
+/* 收起后只留一行：日期 + 展开控件；选中边框仍留在热力图上，
+   这样"正在看哪一天"不会因为收起而丢失。 */
+.dth-detail-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; }
+.dth-detail-toggle {
+  border: 0; background: none; padding: 0; margin: 0; cursor: pointer;
+  font: inherit; font-size: 12px; line-height: 20px;
+  color: var(--dsw-alias-label-secondary, #61666b);
+}
+.dth-detail-toggle:hover { color: var(--dsw-alias-label-primary, #555); }
+.dth-detail-toggle:focus-visible { outline: 2px solid var(--dsw-alias-label-primary, #555); outline-offset: 2px; }
 .dth-detail h3, .dth-detail p { margin: 0; }
 .dth-detail h3 { font-size: 18px; font-weight: 500; }
 .dth-total { font-size: 32px; font-weight: 500; color: var(--dsw-alias-label-primary, #555); }
@@ -175,7 +195,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
 .dth-stats dt { color: var(--dsw-alias-label-secondary, #61666b); margin-bottom: 6px; }
 .dth-stats dd { margin: 0; font-size: 20px; }
 .dth-composition { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 10px; font-size: 12px; color: var(--dsw-alias-label-secondary, #61666b); }
-.dth-bar { display: flex; height: 12px; width: 100%; overflow: hidden; border-radius: 4px; background: var(--dsw-alias-bg-sunken, rgba(127,127,127,.16)); margin-top: 10px; }
+.dth-bar { display: flex; height: 12px; width: 100%; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 8%, transparent); margin-top: 10px; }
 .dth-bar-segment { height: 100%; flex: none; }
 .dth-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
 .dth-part[data-part='inputTokens'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 90%, transparent); }
@@ -287,6 +307,8 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       const [metric, setMetric] = React.useState('totalTokens');
       const [mode, setMode] = React.useState('day');
       const [cell, setCell] = React.useState(20);
+      // detailOpen 放在后面：state 顺序影响 tools/test-client.mjs 的下标断言。
+      const [detailOpen, setDetailOpen] = React.useState(false);
       const [tip, setTip] = React.useState(null);
       const [selectedDay, setSelectedDay] = React.useState(null);
       const [highlight, setHighlight] = React.useState(null);
@@ -312,12 +334,20 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         return () => window.clearTimeout(timer);
       }, [payload !== null]);
 
-      // Keep focus and scroll on the heatmap while updating inline details.
+      // 选中与展开是同一台状态机：点另一天直接换日期并展开；点当前这天在
+      // 展开/收起之间切换。收起只隐藏正文，选中边框留在热力图上，
+      // 所以"刚才看的是哪天"不会因为收起而丢失。
       const openDay = (key) => {
         setTip(null);
         setHighlight(null);
         setEntering(false);
-        setSelectedDay((previous) => (previous === key ? null : key));
+        if (selectedDay === key) {
+          setDetailOpen((previous) => !previous);
+          return;
+        }
+        setSelectedDay(key);
+        // 已选中某天时，收起状态下点新的一天应当直接换日期并展开。
+        setDetailOpen(true);
       };
 
       // 语言变化时重渲染：locale 快照每次变化都会通知（切语言或补注册字典）。
@@ -532,10 +562,12 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           setTip(null);
         },
         onKeyDown: (event) => {
-          if (event.key === 'Escape') {
-            setTip(null);
-            setHighlight(null);
-          }
+          if (event.key !== 'Escape') return;
+          setTip(null);
+          setHighlight(null);
+          // 焦点还在格子上时按 Esc 也能收起详情：第一次收起、第二次取消选中。
+          if (detailOpen) setDetailOpen(false);
+          else setSelectedDay(null);
         },
         onClick: () => openDay(key)
       });
@@ -621,7 +653,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
                 h('b', null, formatTokens(payload.totalTokens ?? 0, language))
               );
 
-      const renderDetail = () => {
+      const renderDetail = (open) => {
         const record = byDay.get(selectedDay) ?? {};
         const total = record.totalTokens || 0;
         const parts = [
@@ -647,6 +679,34 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           month: 'long',
           day: 'numeric'
         });
+        const head = h(
+          'div',
+          { className: 'dth-detail-head' },
+          h('h3', null, title),
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'dth-detail-toggle',
+              'aria-expanded': String(open),
+              'aria-controls': 'dth-day-detail',
+              onClick: () => setDetailOpen((previous) => !previous)
+            },
+            open ? t('collapseDetail') : t('expandDetail')
+          )
+        );
+        // 收起时只保留"哪天 + 展开控件"；选中边框留在热力图上，状态不丢。
+        if (!open) {
+          return h(
+            'section',
+            {
+              id: 'dth-day-detail',
+              className: 'dth-detail',
+              'aria-label': t('detailTitle')
+            },
+            head
+          );
+        }
         return h(
           'section',
           {
@@ -656,7 +716,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
             'aria-live': 'polite',
             'aria-atomic': 'true'
           },
-          h('div', null, h('h3', null, title), h('p', { className: 'dth-note' }, t('detailTitle'))),
+          h('div', null, head, h('p', { className: 'dth-note' }, t('detailTitle'))),
           h(
             'div',
             null,
@@ -809,9 +869,12 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
               t('legendMore')
             )
           ),
+          // 热力图下方一行轻提示：这里不是操作区，只负责让"格子可以点"被发现；
+          // 选中并展开后自动消失，不跟数据抢注意力。
+          selectedDay === null ? h('p', { className: 'dth-note' }, t('selectDate')) : null,
           h('p', { className: 'dth-note' }, t('footnote'))
         ),
-        selectedDay === null ? null : renderDetail(),
+        selectedDay === null ? null : renderDetail(detailOpen),
         tip === null
           ? null
           : h(

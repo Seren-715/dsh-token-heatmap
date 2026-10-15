@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>dsh-token-heatmap · 色阶与文案预览（静态）</title>
+    <style>
+      /* 下面这些规则是从 client.js 的 STYLES 里原样抄出来的（含本次改动）。
+         主题变量按 DSH 真实取值注入：深色基座 #151517 / label-primary #f9fafb，
+         浅色基座 #f5f6f7 / label-primary #151517（= neutral-bluish-950）。 */
+      body { margin: 0; font: 13px/1.6 "Segoe UI", system-ui, sans-serif; background: #6b6b6b; }
+      .wrap { display: flex; gap: 0; }
+      .theme { flex: 1; padding: 28px 30px 36px; }
+      .theme[data-theme='dark'] { background: #151517; color: #f9fafb; --dsw-alias-label-primary: #f9fafb; }
+      .theme[data-theme='light'] { background: #f5f6f7; color: #151517; --dsw-alias-label-primary: #151517; }
+      h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+      h3 { font-size: 12px; font-weight: 500; margin: 22px 0 8px; opacity: 0.75; }
+      .muted { opacity: 0.7; font-size: 12px; }
+
+      /* ===== 改动后的四档色阶 ===== */
+      .dth-cell { width: 20px; height: 20px; border-radius: 3px; background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 8%, transparent); }
+      .dth-cell[data-level='1'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 26%, transparent); }
+      .dth-cell[data-level='2'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 48%, transparent); }
+      .dth-cell[data-level='3'] { background: color-mix(in srgb, var(--dsw-alias-label-primary, #555) 72%, transparent); }
+      .dth-cell[data-level='4'] { background: var(--dsw-alias-label-primary, #555); }
+      /* ===== 改动前的空态（--dsw-alias-bg-sunken 在 DSH 里不存在，落到这个兜底值）===== */
+      .dth-cell[data-old='true'] { background: rgba(127, 127, 127, 0.16); }
+
+      .row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+      .row .tag { width: 118px; flex: none; font-size: 12px; opacity: 0.75; }
+      .row .cell { width: 24px; height: 24px; border-radius: 3px; }
+      .legend { display: flex; align-items: center; gap: 4px; }
+      .legend i { display: block; width: 10px; height: 10px; border-radius: 2px; }
+      .legend i.dth-cell { width: 10px; height: 10px; }
+      .dth-note { color: #adb2b8; font-size: 12px; line-height: 20px; margin: 0; }
+      .theme[data-theme='light'] .dth-note { color: #61666b; }
+      .note-old { color: #81858c; }
+      .swatchline { border-top: 1px solid rgba(127, 127, 127, 0.25); margin: 16px 0; }
+      .grid { display: flex; gap: 4px; margin-top: 6px; }
+      .col { display: flex; flex-direction: column; gap: 4px; }
+      .cap { font-size: 11px; opacity: 0.6; margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="theme" data-theme="dark">
+        <h2>深色主题（DSH 默认）</h2>
+        <p class="muted">空态 vs 四档用量：</p>
+
+        <h3>改动前</h3>
+        <div class="row">
+          <span class="tag">空态（兜底灰）</span>
+          <span class="dth-cell cell" data-old="true"></span>
+          <span class="muted">← 一个变量名写错，空态被画成了"中等偏低用量"</span>
+        </div>
+        <div class="row">
+          <span class="tag">用量 1→4 档</span>
+          <span class="dth-cell cell" data-level="1"></span>
+          <span class="dth-cell cell" data-level="2"></span>
+          <span class="dth-cell cell" data-level="3"></span>
+          <span class="dth-cell cell" data-level="4"></span>
+        </div>
+
+        <h3>改动后</h3>
+        <div class="row">
+          <span class="tag">空态（8%）</span>
+          <span class="dth-cell cell"></span>
+          <span class="muted">← 压到最暗，有量的格子独占亮度范围</span>
+        </div>
+        <div class="row">
+          <span class="tag">用量 1→4 档</span>
+          <span class="dth-cell cell" data-level="1"></span>
+          <span class="dth-cell cell" data-level="2"></span>
+          <span class="dth-cell cell" data-level="3"></span>
+          <span class="dth-cell cell" data-level="4"></span>
+        </div>
+
+        <div class="swatchline"></div>
+        <h3>图例（同一条规则渲染）</h3>
+        <div class="legend dth-cell-legend">
+          <span class="muted">少</span>
+          <i class="dth-cell"></i><i class="dth-cell" data-level="1"></i><i class="dth-cell" data-level="2"></i
+          ><i class="dth-cell" data-level="3"></i><i class="dth-cell" data-level="4"></i>
+          <span class="muted">多</span>
+        </div>
+
+        <div class="swatchline"></div>
+        <h3>说明文字对比度</h3>
+        <p class="note-old">改动前（label-tertiary #81858c）</p>
+        <p class="dth-note">改动后（label-secondary #adb2b8）：数据来自本地 DSH 会话日志；总量含缓存读取，不代表实际费用。</p>
+        <p class="dth-note">点击格子查看当日详情</p>
+
+        <div class="swatchline"></div>
+        <h3>一列真实分布（4 天有量、其余空，模拟你的日志）</h3>
+        <div class="grid">
+          <div class="col" id="grid-dark"></div>
+          <div class="col" id="grid-dark2"></div>
+          <div class="col" id="grid-dark3"></div>
+          <div class="col" id="grid-dark4"></div>
+          <div class="col" id="grid-dark5"></div>
+          <div class="col" id="grid-dark6"></div>
+          <div class="col" id="grid-dark7"></div>
+        </div>
+        <p class="cap">前六列全空，第七列四天有量、一天为最高档——空态属于"看不见"，用量自己跳出来。</p>
+      </section>
+
+      <section class="theme" data-theme="light">
+        <h2>浅色主题</h2>
+        <p class="muted">同一套规则，空态压暗（浅色下 8% 的近黑 = 很浅的灰）。</p>
+
+        <h3>改动前</h3>
+        <div class="row">
+          <span class="tag">空态（兜底灰）</span>
+          <span class="dth-cell cell" data-old="true"></span>
+        </div>
+        <div class="row">
+          <span class="tag">用量 1→4 档</span>
+          <span class="dth-cell cell" data-level="1"></span>
+          <span class="dth-cell cell" data-level="2"></span>
+          <span class="dth-cell cell" data-level="3"></span>
+          <span class="dth-cell cell" data-level="4"></span>
+        </div>
+
+        <h3>改动后</h3>
+        <div class="row">
+          <span class="tag">空态（8%）</span>
+          <span class="dth-cell cell"></span>
+        </div>
+        <div class="row">
+          <span class="tag">用量 1→4 档</span>
+          <span class="dth-cell cell" data-level="1"></span>
+          <span class="dth-cell cell" data-level="2"></span>
+          <span class="dth-cell cell" data-level="3"></span>
+          <span class="dth-cell cell" data-level="4"></span>
+        </div>
+
+        <div class="swatchline"></div>
+        <h3>图例</h3>
+        <div class="legend">
+          <span class="muted">少</span>
+          <i class="dth-cell"></i><i class="dth-cell" data-level="1"></i><i class="dth-cell" data-level="2"></i
+          ><i class="dth-cell" data-level="3"></i><i class="dth-cell" data-level="4"></i>
+          <span class="muted">多</span>
+        </div>
+
+        <div class="swatchline"></div>
+        <h3>说明文字对比度</h3>
+        <p class="note-old">改动前（label-tertiary #81858c）</p>
+        <p class="dth-note">改动后（label-secondary #61666b）：数据来自本地 DSH 会话日志；总量含缓存读取，不代表实际费用。</p>
+        <p class="dth-note">点击格子查看当日详情</p>
+
+        <div class="swatchline"></div>
+        <h3>一列真实分布</h3>
+        <div class="grid">
+          <div class="col" id="grid-light"></div>
+          <div class="col" id="grid-light2"></div>
+          <div class="col" id="grid-light3"></div>
+          <div class="col" id="grid-light4"></div>
+          <div class="col" id="grid-light5"></div>
+          <div class="col" id="grid-light6"></div>
+          <div class="col" id="grid-light7"></div>
+        </div>
+        <p class="cap">前六列全空，第七列四天有量。</p>
+      </section>
+    </div>
+    <script>
+      // 每天一格：7 行一列，最后一列放四天真实用量（1/2/3/4 档）。
+      const weekly = {
+        dark: [
+          [0, 0, 0, 0, 0, 0, 2],
+          [0, 0, 0, 0, 0, 0, 3],
+          [0, 0, 0, 0, 0, 0, 4],
+          [0, 0, 0, 0, 0, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0]
+        ]
+      };
+      for (const theme of ['dark', 'light']) {
+        const cols = [1, 2, 3, 4, 5, 6, 7].map((i) =>
+          document.getElementById(`grid-${theme}${i === 1 ? '' : i}`)
+        );
+        cols.forEach((col, ci) => {
+          col.innerHTML = '';
+          for (let r = 0; r < 7; r += 1) {
+            const level = ci === 6 ? weekly.dark[0][r] : 0;
+            const cell = document.createElement('span');
+            cell.className = 'dth-cell';
+            if (level > 0) cell.setAttribute('data-level', String(level));
+            col.appendChild(cell);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

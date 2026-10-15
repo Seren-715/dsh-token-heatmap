@@ -8,19 +8,30 @@ All data comes from DSH's own local session logs — **no external network reque
 
 > **Privacy**: this plugin makes no outbound requests. Session logs are read on the local machine only, and the aggregated result is served to your local DSH page. The repository contains no personal data or credentials.
 
+## What makes this plugin different
+
+- **A real settings section, not an overlay.** It registers into the host's `settings.section` slot and renders React only. It never appends to `document.body`, never replaces the app root, and imports no Harness client package — so it sits in the sidebar next to the built-in pages instead of floating on top of them.
+- **Fully offline, single data source.** Nothing is sent anywhere and there is no extra ledger to maintain: every number is derived from the session logs DSH already writes.
+- **Parses the log format for real.** Concatenated zstd frames, replayed `seq` values and truncated tail frames are all handled explicitly — a naive single decompression only ever yields the first frame. See [Data source](#data-source).
+- **Readable at both ends of the scale.** Four metrics differ by orders of magnitude, so colour levels are **quantiles of your own data**, not absolute thresholds. Cache reads often dominate a day (99% in the screenshots), which is why "input+output" is one click away.
+- **Brightness is reserved for data.** Days with no recorded usage are pinned to the dimmest step, so an empty half-year grid stays quiet and the days you actually used stand out.
+- **The interaction keeps its place.** Collapsing a day's details keeps the selection outline on the heatmap, another click switches days without collapsing first, and `Esc` collapses before it clears. No flow forces you to close a panel to look at another day.
+- **Native where it counts.** Theme tokens come from the host (`--dsw-alias-*`), and visible text is registered through `ctx.locale.register` so switching the app language switches this section too — including number units (`万/亿` vs `K/M/B`).
+- **Regression tests instead of claims.** Five self-test entry points cover frame parsing, deduplication, caching, weekly boundaries, client rendering and route registration. See [Layout](#layout).
+
 ## Screenshots
 
 ### Half-year heatmap and compact tooltip
 
 Open Settings → **Token usage**. The default range is six months. Choose total, input+output, cache read or output, and switch between daily and weekly views. The range selector offers six months or a full year; the year is split into two rows.
 
-Hover a date cell to display three lines: the date (YYYY-MM-DD), the selected metric's Token count, and “Click to view details”. The example below shows 2026-10-13 with a total of 117,405,946 Token. Clicking the cell opens that day's breakdown below the heatmap. The outline indicates hover or selection; today's cell has no default highlight.
+Hover a date cell to display three lines: the date (YYYY-MM-DD), the selected metric's Token count, and “Click to view details”. The example below shows 2026-10-13 with a total of 117,405,946 Token. Clicking the cell opens that day's breakdown below the heatmap. The outline indicates hover or selection; today's cell has no default highlight. Cells with no recorded usage stay at the dimmest step, so brightness is reserved for days that actually have usage.
 
 ![English half-year heatmap and tooltip](docs/heatmap-en.png)
 
 ### Inline daily details and Token composition
 
-Click a date to show its details below the heatmap without leaving the page. Click the selected date again to collapse its details, or select another day to update the same region. Filters remain available.
+Click a date to show its details below the heatmap without leaving the page; a one-line hint above the footnote points this out until you pick a date. Click the selected date again to collapse the body — the selection outline stays on the heatmap, so you can still see which day is pinned — or select another day to switch the details directly. The collapsed row keeps an expand control, and `Esc` on a focused cell collapses first and clears the selection second. Filters remain available.
 
 Details include the total, input, output, cache reads and calls, plus cache writes when present. The grayscale bar shows each component's share by Token count. The October 13, 2026 example shows 117,405,946 Token, with cache reads accounting for 99.09%. These are screenshot examples; your statistics come from your local logs.
 
@@ -42,6 +53,7 @@ Labels, months, dates and number units follow the host language. The same daily 
 - **Four metrics**: total / input+output / cache read / output, rendered in theme-aware grayscale
 - Hover or focus shows the cell's date, the selected metric's Token count and a click hint; weekly counts are labeled
 - Click a date for inline daily details below the heatmap: total, input, output, cache reads, calls, and nonzero cache writes; weekly cells open their actual day
+- Clicking the selected date collapses the detail body but keeps its outline; an expand control and `Esc` both collapse, and another click switches days without collapsing first
 - Proportional Token composition bar with percentages and an empty state
 - Approximately 600ms diagonal entrance without delaying the summary; filters and date selection do not replay it
 - Native buttons support Enter/Space and focus feedback; respects system reduced-motion preferences

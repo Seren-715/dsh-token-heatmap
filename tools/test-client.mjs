@@ -54,6 +54,7 @@ const draw = () => {
 };
 const all = (node) =>
   node && typeof node === 'object' ? [node, ...node.children.flatMap(all)] : [];
+// Hook slots are positional in the mock: 2 = metric, 5 = detailOpen, 6 = tip.
 const initial = all(draw()).find((n) => n.props.className === 'dth-weeks');
 assert.equal(initial.props['data-ready'], 'false');
 assert.equal(initial.props['data-enter'], 'false');
@@ -72,6 +73,12 @@ states[0] = {
 };
 let tree = draw();
 let nodes = all(tree);
+// Nothing selected yet: the hint under the heatmap teaches the click affordance.
+assert(
+  nodes.some((n) => n.children.includes('selectDate')),
+  'a discovery hint sits under the heatmap before any selection'
+);
+assert.equal(states[5], false, 'details start collapsed');
 const firstVisible = nodes.find((n) => n.props.className === 'dth-weeks');
 assert.equal(firstVisible.props['data-ready'], 'true');
 assert.equal(
@@ -113,6 +120,12 @@ assert(
 assert(nodes.some((n) => n.props.className === 'dth-bar' && n.props.role === 'img'));
 
 assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-13').props['aria-pressed'], true);
+assert(
+  !all(draw()).some((n) => n.children.includes('selectDate')),
+  'the hint disappears once a day is selected'
+);
+
+// Direct date switching: click another day and the details follow it, no close needed.
 nodes.find((n) => n.props['data-day'] === '2026-10-12').props.onClick();
 tree = draw();
 nodes = all(tree);
@@ -120,21 +133,61 @@ assert.equal(nodes.filter((n) => n.type === 'section').length, 1);
 assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-12').props['aria-pressed'], true);
 assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-13').props['aria-pressed'], false);
 assert.equal(states[2], 'totalTokens');
-assert.equal(states[3], 'day');
+assert.equal(states[5], true, 'details stay expanded while switching dates');
 assert.equal(nodes.find((n) => n.props.className === 'dth-weeks').props['data-enter'], 'false');
 
+// Clicking the selected date collapses the body but keeps the selection border,
+// so the user still knows which day is pinned.
 nodes.find((n) => n.props['data-day'] === '2026-10-12').props.onClick();
 tree = draw();
 nodes = all(tree);
-assert(!nodes.some((n) => n.type === 'section'), 'clicking the selected date closes details');
-assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-12').props['aria-pressed'], false);
+assert(
+  nodes.some((n) => n.type === 'section'),
+  'the collapsed detail row stays mounted'
+);
+assert.equal(
+  nodes.find((n) => n.props['data-day'] === '2026-10-12').props['aria-pressed'],
+  true,
+  'collapsing keeps the selected border'
+);
+assert(!JSON.stringify(tree).includes('99.09%'), 'collapsed body hides the numbers');
+assert(
+  nodes.some((n) => n.children.includes('expandDetail')),
+  'the collapsed row offers an expand control'
+);
+
+// Toggling the control re-expands the same day.
+nodes.find((n) => n.props.className === 'dth-detail-toggle').props.onClick();
+tree = draw();
+nodes = all(tree);
+assert(JSON.stringify(tree).includes('117,405,946'), 'expand control restores the body');
+
+// Escape on a focused cell collapses first, then clears the selection.
+cell = nodes.find((n) => n.props['data-day'] === '2026-10-12');
+cell.props.onKeyDown({ key: 'Escape' });
+assert.equal(states[5], false, 'Escape collapses the detail body');
+nodes = all(draw());
+assert.equal(
+  nodes.find((n) => n.props['data-day'] === '2026-10-12').props['aria-pressed'],
+  true,
+  'selection survives the first Escape'
+);
+cell = nodes.find((n) => n.props['data-day'] === '2026-10-12');
+cell.props.onKeyDown({ key: 'Escape' });
+nodes = all(draw());
+assert(!nodes.some((n) => n.type === 'section'), 'a second Escape clears the selection');
+assert(
+  nodes.some((n) => n.children.includes('selectDate')),
+  'the hint returns with no selection'
+);
+
+// Range switching keeps whatever is pinned and expanded.
 nodes.find((n) => n.props['data-day'] === '2026-10-12').props.onClick();
 nodes = all(draw());
 assert(
   nodes.some((n) => n.type === 'section'),
-  'clicking again reopens details'
+  're-selecting after Escape reopens details'
 );
-
 nodes.find((n) => n.type === 'button' && n.children.includes('rangeYear')).props.onClick();
 tree = draw();
 nodes = all(tree);

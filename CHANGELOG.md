@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.1 — 2026-10-15
+
+- 修复空态色阶：空记录原本用 `--dsw-alias-bg-sunken`，而该变量在 DSH 主题里并不存在，
+  一直落到兜底值 `rgba(127,127,127,.16)`，恰好夹在 level 1（26%）与 level 2（48%）之间，
+  让"没有用量"看起来像中等用量。现在空态固定为 8% 的最暗一档，有记录的格子独占亮度范围。
+- 选中与展开分离：再次点击已选日期只收起正文，选中外圈保留，"刚看的是哪天"不会丢；
+  新增收起行的展开控件，`Esc` 在格子上第一次收起、第二次取消选中。
+- 热力图下方新增一行轻提示「点击格子查看当日详情」，选中日期后自动消失。
+- 说明文字对比度从 `label-tertiary` 提到 `label-secondary`，并精简统计口径文案。
+- 客户端回归测试补上收起/展开、日期直接切换、`Esc` 两段行为与提示显隐的断言。
+
+Empty-day cells previously used a theme variable that does not exist in DSH, so they fell back to a
+gray that sat between levels 1 and 2 and read as mid usage. Empty cells are now pinned to the
+dimmest step, collapsing a day keeps its selection outline, a dedicated control re-expands it, and
+`Esc` collapses before it clears. A discovery hint and higher-contrast notes round out the change.
+
 ## Unreleased
 
 - Standardize source and documentation formatting with EditorConfig and Prettier.

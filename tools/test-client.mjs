@@ -80,13 +80,23 @@ assert.equal(
   'first visible render must already animate, before effects'
 );
 assert.equal(firstVisible.children.length, 26, 'default range is 26 weeks');
+const monthPositions = nodes
+  .find((n) => n.props.className === 'dth-months')
+  .children.map((node, index) =>
+    node.children.some((child) => child?.type === 'span') ? index : -1
+  )
+  .filter((index) => index >= 0);
+for (let i = 1; i < monthPositions.length; i++) {
+  assert((monthPositions[i] - monthPositions[i - 1]) * 24 >= 48, 'month labels retain spacing');
+}
+
 let cell = nodes.find((n) => n.props['data-day'] === '2026-10-13');
 assert.equal(cell.type, 'button');
 assert.equal(typeof cell.props.onFocus, 'function');
 cell.props.onMouseEnter({ clientX: 100, clientY: 100 });
 const tooltip = all(draw()).find((n) => n.props.className === 'dth-tip');
-assert.equal(tooltip.children[0], 'metricTotal 117,405,946 Token\ntipClick');
-assert.equal(tooltip.children[0].split('\n').length, 2);
+assert.equal(tooltip.children[0], '2026-10-13\nmetricTotal 117,405,946 Token\ntipClick');
+assert.equal(tooltip.children[0].split('\n').length, 3);
 cell.props.onClick();
 tree = draw();
 nodes = all(tree);

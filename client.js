@@ -453,7 +453,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       /** 把 7 天一组的数据铺成"每列一周"的格子，供两种口径共用。 */
       const buildColumns = (cellsFor) => {
         const columns = [];
-        const labels = [];
+        const monthLabels = [];
         for (let week = 0; week < weeks; week += 1) {
           const columnCells = [];
           let label = '';
@@ -477,14 +477,32 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
             columnCells.push(cellsFor({ week, weekday, date, key: dayKey(date) }));
           }
           columns.push(h('div', { key: `w${week}`, className: 'dth-week' }, columnCells));
-          labels.push(
-            h(
-              'div',
-              { key: `m${week}`, className: 'dth-month' },
-              label === '' ? null : h('span', null, label)
-            )
-          );
+          monthLabels.push(label);
         }
+        // Reserve enough horizontal space for each localized month label.
+        // Prefer a month boundary over an adjacent partial-month row heading.
+        const minimumLabelColumns = Math.ceil(48 / (cell + 4));
+        for (let rowStart = 0; rowStart < weeks; rowStart += columnsPerRow) {
+          let previous = -1;
+          for (let week = rowStart; week < Math.min(weeks, rowStart + columnsPerRow); week += 1) {
+            if (!monthLabels[week]) continue;
+            if (previous >= rowStart && week - previous < minimumLabelColumns) {
+              if (previous === rowStart) monthLabels[previous] = '';
+              else {
+                monthLabels[week] = '';
+                continue;
+              }
+            }
+            previous = week;
+          }
+        }
+        const labels = monthLabels.map((label, week) =>
+          h(
+            'div',
+            { key: `m${week}`, className: 'dth-month' },
+            label === '' ? null : h('span', null, label)
+          )
+        );
         return { columns, labels };
       };
 
@@ -499,7 +517,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         style: { '--dth-delay': `${Math.round(((week + weekday) / (weeks + 5)) * 420)}ms` },
         onMouseEnter: (event) => {
           setHighlight(key);
-          setTip({ text, x: event.clientX, y: event.clientY });
+          setTip({ text: `${key}\n${text}`, x: event.clientX, y: event.clientY });
         },
         onMouseLeave: () => {
           setHighlight(null);
@@ -508,7 +526,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
         onFocus: (event) => {
           const rect = event.currentTarget.getBoundingClientRect();
           setHighlight(key);
-          setTip({ text, x: rect.left, y: rect.top });
+          setTip({ text: `${key}\n${text}`, x: rect.left, y: rect.top });
         },
         onBlur: () => {
           setHighlight(null);

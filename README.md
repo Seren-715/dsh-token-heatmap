@@ -14,7 +14,7 @@ All data comes from DSH's own local session logs — **no external network reque
 
 Open Settings → **Token usage**. The default range is six months. Choose total, input+output, cache read or output, and switch between daily and weekly views. The range selector offers six months or a full year; the year is split into two rows.
 
-Hover a cell to see only the selected metric's Token count and a click hint. The outline indicates hover or selection; today's cell has no default highlight.
+Hover a cell to see the cell's date, the selected metric's Token count and a click hint. The outline indicates hover or selection; today's cell has no default highlight.
 
 ![English half-year heatmap and tooltip](docs/heatmap-en.png)
 
@@ -40,7 +40,7 @@ Labels, months, dates and number units follow the host language. The same daily 
 - Cells capped at 20px with 4px gaps, sized to the container to avoid horizontal scrollbars
 - **Daily / Weekly** views: daily levels or one shared level per natural week; Sunday–Saturday, future dates empty
 - **Four metrics**: total / input+output / cache read / output, rendered in theme-aware grayscale
-- Hover or focus shows only the selected metric's Token count and a click hint; weekly counts are labeled
+- Hover or focus shows the cell's date, the selected metric's Token count and a click hint; weekly counts are labeled
 - Click a date for inline daily details below the heatmap: total, input, output, cache reads, calls, and nonzero cache writes; weekly cells open their actual day
 - Proportional Token composition bar with percentages and an empty state
 - Approximately 600ms diagonal entrance without delaying the summary; filters and date selection do not replay it

@@ -65,7 +65,7 @@ Labels, months, dates and number units follow the host language. The same daily 
 - Hover or focus shows the cell's date, the selected metric's Token count and a click hint; weekly counts are labeled
 - Click a date for inline daily details below the heatmap: total, input, output, cache reads, calls, nonzero cache writes, and an estimated cost in CNY; weekly cells open their actual day
 - Selecting the selected date again collapses the detail body while retaining its selection outline; an expand control and `Esc` both collapse, and selecting another date switches without an intermediate collapse
-- **Cost estimate** based on DeepSeek's published CNY prices, including the peak/off-peak schedule applied per record timestamp; unknown models fall back to the Flash table and are labelled as such
+- **Cost estimate** based on DeepSeek's published CNY prices, including the peak/off-peak schedule applied per record timestamp; unknown models fall back to the Flash table and are labelled as such. The English interface writes `CNY ¥4.98` so the currency is explicit.
 - Proportional Token composition bar with percentages and an empty state
 - Approximately 600ms diagonal entrance without delaying the summary; filters and date selection do not replay it
 - Native buttons support Enter/Space and focus feedback; respects system reduced-motion preferences
@@ -112,6 +112,7 @@ cost = cacheReadTokens/1e6 × cacheHitPrice
 - Peak hours are 09:00–12:00 and 14:00–18:00 Beijing time on weekdays. Weekends and PRC statutory holidays are always off-peak.
 - Models not listed in the table fall back to the Flash prices; the detail panel names them so an assumption is visible.
 - The figures are estimates, not a bill. The authoritative amount is the provider's billing record.
+- **The billing currency is CNY, not the interface language.** DeepSeek bills in CNY and the price table is denominated in CNY, so the English interface prefixes the amount with `CNY` (for example `CNY ¥4.98`) rather than converting to USD. No exchange-rate conversion is applied.
 
 The table and the 2026 holiday list live in `lib/pricing.js` and must be updated when DeepSeek changes prices or when the State Council publishes the following year's holiday schedule.
 

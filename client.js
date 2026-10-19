@@ -62,9 +62,10 @@ window.__ModuleLoader__.load({
         collapseDetail: '收起详情',
         expandDetail: '展开详情',
         costLabel: '当日消费',
-        costNote: '按 DeepSeek 官方价目估算（含峰谷分时），实际以账单为准。',
+        costNote: '按 DeepSeek 官方价目估算（含峰谷分时），以人民币（CNY）结算，实际以账单为准。',
         costAssumed: '以下模型按默认价目估算：{models}',
-        footnote: '数据来自本地 DSH 会话日志；总量含缓存读取。金额按官方价目估算，实际以账单为准。'
+        footnote:
+          '数据来自本地 DSH 会话日志；总量含缓存读取。金额按官方价目估算、以人民币结算，实际以账单为准。'
       },
       en: {
         navLabel: 'Token usage',
@@ -104,10 +105,11 @@ window.__ModuleLoader__.load({
         collapseDetail: 'Hide details',
         expandDetail: 'Show details',
         costLabel: 'Daily cost',
-        costNote: 'Estimated from DeepSeek list prices (peak/off-peak); actual billing may differ.',
+        costNote:
+          'Estimated from DeepSeek list prices (peak/off-peak), billed in CNY; actual billing may differ.',
         costAssumed: 'Default pricing applied to: {models}',
         footnote:
-          'From local DSH session logs; totals include cache reads. Costs are estimates from DeepSeek list prices; actual billing may differ.'
+          'From local DSH session logs; totals include cache reads. Costs are estimated from DeepSeek list prices and billed in CNY; actual billing may differ.'
       }
     };
 
@@ -241,12 +243,17 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
 
     const formatFull = (value) => (Number.isFinite(value) ? value.toLocaleString('en-US') : '0');
 
-    // 金额由宿主按官方价目表估算，币种随载荷下发；小额保留可读性。
-    const formatCost = (value) => {
+    // 金额由宿主按官方价目表估算，计费币种为人民币（CNY）。
+    // 英文界面标注币种代码，避免把 ¥ 误读成美元；不做汇率换算。
+    const formatCost = (value, language) => {
       const amount = Number(value);
-      if (!Number.isFinite(amount) || amount <= 0) return '¥0.00';
-      if (amount < 0.01) return '<¥0.01';
-      return `¥${amount.toFixed(2)}`;
+      const text =
+        !Number.isFinite(amount) || amount <= 0
+          ? '¥0.00'
+          : amount < 0.01
+            ? '<¥0.01'
+            : `¥${amount.toFixed(2)}`;
+      return language === 'en' ? `CNY ${text}` : text;
     };
 
     // 月份刻度：中文用 "10月"，英文用 "Oct"。
@@ -753,7 +760,7 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
               'div',
               null,
               h('p', { className: 'dth-note' }, t('costLabel')),
-              h('div', { className: 'dth-total' }, formatCost(cost)),
+              h('div', { className: 'dth-total' }, formatCost(cost, language)),
               h('p', { className: 'dth-note' }, t('costNote')),
               assumedModels.length === 0
                 ? null

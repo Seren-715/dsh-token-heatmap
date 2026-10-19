@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1 — 2026-10-19
+
+- 币种标注：英文界面金额改为 `CNY ¥4.98`，明确计费币种是人民币，避免把 `¥` 读成美元。
+- 中文界面的金额与说明不变；插件不做汇率换算。
+- 文案：中英文的消费说明与脚注补充「以人民币结算」。
+- 测试：`test-client` 增加英文界面 `CNY ¥9.96` 的断言。
+
+The English interface now prefixes the cost with `CNY` (for example `CNY ¥4.98`) so the billing
+currency is explicit; no exchange-rate conversion is performed. The Chinese interface is unchanged,
+and the cost note and footnote state that billing is in CNY in both languages.
+
 ## 0.5.0 — 2026-10-19
 
 - 新增**当日消费金额估算**：详情页在当日总量旁显示人民币估算金额。

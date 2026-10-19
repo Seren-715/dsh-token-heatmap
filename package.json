@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-heatmap",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Daily token heatmap in DSH settings, from local logs. ｜ DSH 设置里的每日 token 用量热力图，取自本机会话日志。",
   "keywords": [

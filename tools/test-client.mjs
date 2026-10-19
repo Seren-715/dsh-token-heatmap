@@ -48,10 +48,11 @@ plugin.apply({
   locale: { bind: () => (key, vars) => key + (vars?.day ?? '') },
   slots: { inject: (_, fn) => fn(), register: (_, fn) => (render = fn) }
 });
-const draw = () => {
+const drawIn = (language) => {
   cursor = 0;
-  return render({ language: 'zh' });
+  return render({ language });
 };
+const draw = () => drawIn('zh');
 const all = (node) =>
   node && typeof node === 'object' ? [node, ...node.children.flatMap(all)] : [];
 // Hook slots are positional in the mock: 2 = metric, 5 = detailOpen, 6 = tip.
@@ -131,6 +132,13 @@ assert(
   nodes.some((n) => n.children.includes('costNote')),
   'the cost line carries its estimate note'
 );
+// English UI keeps the billing currency explicit instead of implying USD.
+// The language state is seeded from props once, so flip the mock slot directly.
+const languageSlot = states.indexOf('zh');
+states[languageSlot] = 'en';
+const englishTree = JSON.stringify(all(drawIn('en')));
+states[languageSlot] = 'zh';
+assert(englishTree.includes('CNY ¥9.96'), 'English UI labels the amount as CNY');
 
 assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-13').props['aria-pressed'], true);
 assert(

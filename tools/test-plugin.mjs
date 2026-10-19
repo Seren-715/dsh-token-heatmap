@@ -29,7 +29,10 @@ for (const day of first.days) {
 }
 console.log('');
 console.log(
-  `  models: ${first.models.map((entry) => `${entry.model}=${entry.tokens.toLocaleString('en-US')}`).join(', ')}`
+  `  models: ${first.models.map((entry) => `${entry.model}=${entry.tokens.toLocaleString('en-US')} tokens / ¥${entry.cost.toFixed(4)}${entry.assumed ? ' (default price)' : ''}`).join(', ')}`
+);
+console.log(
+  `  total cost estimate: ${first.currency} ${first.totalCost.toFixed(4)} (${first.pricing.tableUpdated})`
 );
 
 // The second call must hit the per-file cache and return identical numbers.

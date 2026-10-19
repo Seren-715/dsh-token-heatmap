@@ -61,7 +61,10 @@ window.__ModuleLoader__.load({
         selectDate: '点击格子查看当日详情',
         collapseDetail: '收起详情',
         expandDetail: '展开详情',
-        footnote: '数据来自本地 DSH 会话日志；总量含缓存读取，不代表实际费用。'
+        costLabel: '当日消费',
+        costNote: '按 DeepSeek 官方价目估算（含峰谷分时），实际以账单为准。',
+        costAssumed: '以下模型按默认价目估算：{models}',
+        footnote: '数据来自本地 DSH 会话日志；总量含缓存读取。金额按官方价目估算，实际以账单为准。'
       },
       en: {
         navLabel: 'Token usage',
@@ -100,8 +103,11 @@ window.__ModuleLoader__.load({
         selectDate: 'Select a date to view details',
         collapseDetail: 'Hide details',
         expandDetail: 'Show details',
+        costLabel: 'Daily cost',
+        costNote: 'Estimated from DeepSeek list prices (peak/off-peak); actual billing may differ.',
+        costAssumed: 'Default pricing applied to: {models}',
         footnote:
-          'From local DSH session logs; totals include cache reads and do not represent actual cost.'
+          'From local DSH session logs; totals include cache reads. Costs are estimates from DeepSeek list prices; actual billing may differ.'
       }
     };
 
@@ -190,6 +196,9 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
 .dth-detail-toggle:focus-visible { outline: 2px solid var(--dsw-alias-label-primary, #555); outline-offset: 2px; }
 .dth-detail h3, .dth-detail p { margin: 0; }
 .dth-detail h3 { font-size: 18px; font-weight: 500; }
+/* 当日总量与估算消费并排；窄容器自动换行。 */
+.dth-detail-totals { display: flex; flex-wrap: wrap; gap: 16px 48px; }
+.dth-detail-totals > div { min-width: 0; }
 .dth-total { font-size: 32px; font-weight: 500; color: var(--dsw-alias-label-primary, #555); }
 .dth-stats { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 0; }
 .dth-stats dt { color: var(--dsw-alias-label-secondary, #61666b); margin-bottom: 6px; }
@@ -231,6 +240,14 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
     };
 
     const formatFull = (value) => (Number.isFinite(value) ? value.toLocaleString('en-US') : '0');
+
+    // 金额由宿主按官方价目表估算，币种随载荷下发；小额保留可读性。
+    const formatCost = (value) => {
+      const amount = Number(value);
+      if (!Number.isFinite(amount) || amount <= 0) return '¥0.00';
+      if (amount < 0.01) return '<¥0.01';
+      return `¥${amount.toFixed(2)}`;
+    };
 
     // 月份刻度：中文用 "10月"，英文用 "Oct"。
     const MONTHS_EN = [
@@ -656,6 +673,11 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
       const renderDetail = (open) => {
         const record = byDay.get(selectedDay) ?? {};
         const total = record.totalTokens || 0;
+        // 金额由宿主按官方价目表估算；旧版宿主没有该字段时按 0 展示。
+        const cost = Number(record.cost) || 0;
+        const assumedModels = Array.isArray(payload?.pricing?.assumedModels)
+          ? payload.pricing.assumedModels
+          : [];
         const parts = [
           ['tipInput', 'inputTokens'],
           ['tipOutput', 'outputTokens'],
@@ -719,10 +741,28 @@ button.dth-cell { padding: 0; border: 0; cursor: pointer; flex: none; position: 
           h('div', null, head, h('p', { className: 'dth-note' }, t('detailTitle'))),
           h(
             'div',
-            null,
-            h('p', { className: 'dth-note' }, t('detailTotal')),
-            h('div', { className: 'dth-total' }, formatTokens(total, language)),
-            h('p', { className: 'dth-note' }, `${formatFull(total)} ${t('includesCache')}`)
+            { className: 'dth-detail-totals' },
+            h(
+              'div',
+              null,
+              h('p', { className: 'dth-note' }, t('detailTotal')),
+              h('div', { className: 'dth-total' }, formatTokens(total, language)),
+              h('p', { className: 'dth-note' }, `${formatFull(total)} ${t('includesCache')}`)
+            ),
+            h(
+              'div',
+              null,
+              h('p', { className: 'dth-note' }, t('costLabel')),
+              h('div', { className: 'dth-total' }, formatCost(cost)),
+              h('p', { className: 'dth-note' }, t('costNote')),
+              assumedModels.length === 0
+                ? null
+                : h(
+                    'p',
+                    { className: 'dth-note' },
+                    t('costAssumed', { models: assumedModels.join(', ') })
+                  )
+            )
           ),
           byDay.has(selectedDay) ? null : h('p', { className: 'dth-note' }, t('noRecord')),
           h(

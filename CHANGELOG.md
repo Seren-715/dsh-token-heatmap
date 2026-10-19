@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 — 2026-10-19
+
+- 新增**当日消费金额估算**：详情页在当日总量旁显示人民币估算金额。
+- 新增 `lib/pricing.js`：DeepSeek 官方价目表（Flash / Pro，空闲与高峰两档）、峰谷时段规则、
+  2026 年法定节假日清单，以及逐条记录的金额换算（金额以 1e-8 元为最小单位整数累计）。
+- 峰谷档位按每条日志记录自身的时间戳判定，而不是按请求时刻；周末与法定节假日全天按空闲价。
+- 宿主聚合新增 `currency`、`totalCost`、`pricing` 与逐日 `cost` 字段；模型维度同时返回金额与
+  `assumed` 标记（未列入价目表的模型回退到 Flash 价并在界面列出）。
+- 详情页与脚注明确标注「金额为估算，实际以账单为准」。
+- 测试：`test-host` 增加峰谷档位、周末、法定节假日、模型价目与回退价的断言；`test-client`
+  增加金额展示与无数据日 `¥0.00` 的断言。
+
+Adds an estimated daily cost in CNY to the detail panel. A new `lib/pricing.js` carries DeepSeek's
+published Flash/Pro prices for the off-peak and peak tiers, the Beijing-time peak schedule, the 2026
+statutory-holiday list, and per-record cost calculation with integer money units. Peak tier selection
+uses each log record's own timestamp; weekends and holidays always use off-peak prices. The host
+payload gains `currency`, `totalCost`, `pricing` metadata and a per-day `cost`; model entries gain
+`cost` and an `assumed` flag. The UI and footnote state that the figure is an estimate, not a bill.
+
 ## 0.4.3 — 2026-10-15
 
 - 文档：两份 README 的「界面示例」章节新增**截图时效说明**，指明现有截图拍摄于 v0.4.1 之前，并逐条列出 v0.4.1 引入、

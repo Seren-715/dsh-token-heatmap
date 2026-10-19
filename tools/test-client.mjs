@@ -66,10 +66,13 @@ states[0] = {
       inputTokens: 534806,
       outputTokens: 530532,
       cacheReadTokens: 116340608,
-      calls: 524
+      calls: 524,
+      cost: 9.96
     }
   ],
-  totalTokens: 117405946
+  totalTokens: 117405946,
+  currency: 'CNY',
+  pricing: { assumedModels: [] }
 };
 let tree = draw();
 let nodes = all(tree);
@@ -118,6 +121,16 @@ assert(
   Math.abs(segments.reduce((sum, n) => sum + parseFloat(n.props.style.width), 0) - 100) < 1e-9
 );
 assert(nodes.some((n) => n.props.className === 'dth-bar' && n.props.role === 'img'));
+// Cost estimate: rendered next to the daily total, labelled as an estimate.
+assert(
+  nodes.some((n) => n.children.includes('costLabel')),
+  'the detail panel shows a cost label'
+);
+assert(JSON.stringify(tree).includes('¥9.96'), 'estimated cost is formatted as CNY');
+assert(
+  nodes.some((n) => n.children.includes('costNote')),
+  'the cost line carries its estimate note'
+);
 
 assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-13').props['aria-pressed'], true);
 assert(
@@ -135,6 +148,7 @@ assert.equal(nodes.find((n) => n.props['data-day'] === '2026-10-13').props['aria
 assert.equal(states[2], 'totalTokens');
 assert.equal(states[5], true, 'details stay expanded while switching dates');
 assert.equal(nodes.find((n) => n.props.className === 'dth-weeks').props['data-enter'], 'false');
+assert(JSON.stringify(tree).includes('¥0.00'), 'a day without cost data renders ¥0.00');
 
 // Clicking the selected date collapses the body but keeps the selection border,
 // so the user still knows which day is pinned.
